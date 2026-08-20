@@ -1,0 +1,42 @@
+project:
+  type: website
+  output-dir: ../docs
+
+website:
+  title: "VERA"
+  description: "Variable Ecological Restriction Analysis"
+  site-url: https://gok-wolf.github.io/VERA-climate-diagnostics/
+  repo-url: https://github.com/gok-wolf/VERA-climate-diagnostics
+  repo-actions: [edit, issue]
+  search: true
+  navbar:
+    left:
+      - href: index.md
+        text: Home
+      - href: workflow.md
+        text: Workflow
+      - href: tutorial.md
+        text: Sitta tutorial
+      - href: outputs.md
+        text: Output guide
+      - href: reproducibility.md
+        text: Reproducibility
+    right:
+      - icon: github
+        href: https://github.com/gok-wolf/VERA-climate-diagnostics
+        aria-label: GitHub
+  page-footer:
+    left: "VERA development documentation"
+    right: "Development version 0.1.0-dev"
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-tools: true
+    link-external-newwindow: true
+
+execute:
+  freeze: auto
