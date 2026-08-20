@@ -1,0 +1,33 @@
+# Local occurrence, raster and generated-output directories
+Occurrences/
+Variables/
+Results/
+results/
+outputs/
+
+# Large geospatial files
+*.tif
+*.tiff
+*.ovr
+*.aux.xml
+*.tfw
+
+# Temporary VERA and terra products
+temp_terra/
+*_temp/
+
+# R session files
+.Rhistory
+.RData
+.Ruserdata
+.Rproj.user/
+
+# Quarto generated files
+/.quarto/
+/docs/
+website/.quarto/
+website/_freeze/
+
+# Operating-system files
+.DS_Store
+Thumbs.db
