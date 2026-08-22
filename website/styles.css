@@ -2,34 +2,71 @@ html {
   font-size: 18px;
 }
 
-body {
-  font-family: Arial, Helvetica, sans-serif;
+body,
+p,
+li,
+dd,
+dt,
+td,
+th,
+label,
+input,
+button,
+textarea,
+select {
+  font-family: Arial !important;
   color: #17202a;
   line-height: 1.65;
 }
 
-h1, h2, h3, h4, h5, h6,
-.title, .subtitle {
-  font-family: Arial, Helvetica, sans-serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.title,
+.subtitle,
+.quarto-title-meta,
+.description {
+  font-family: Arial !important;
   color: #0f1720;
   font-weight: 700;
 }
 
-.navbar, .nav-link, #TOC {
-  font-family: Arial, Helvetica, sans-serif;
+.navbar,
+.navbar-brand,
+.nav-link,
+#TOC,
+.toc-active,
+.sidebar-navigation,
+.dropdown-menu,
+.dropdown-item {
+  font-family: Arial !important;
   color: #17202a;
   font-weight: 600;
 }
 
-.figure-caption, figcaption {
-  font-family: Arial, Helvetica, sans-serif;
+.figure-caption,
+figcaption,
+.callout,
+blockquote {
+  font-family: Arial !important;
   color: #374151;
-  font-size: 0.9rem;
   font-weight: 500;
 }
 
-code, pre {
-  font-family: "Courier New", monospace;
+.figure-caption,
+figcaption {
+  font-size: 0.9rem;
+}
+
+code,
+pre,
+kbd,
+samp,
+.sourceCode {
+  font-family: Arial !important;
 }
 
 @media (max-width: 768px) {
