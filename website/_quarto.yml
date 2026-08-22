@@ -38,6 +38,5 @@ format:
     code-fold: true
     code-tools: true
     link-external-newwindow: true
-
 execute:
   freeze: auto
