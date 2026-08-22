@@ -1,112 +1,153 @@
 # VERA: Variable Ecological Restriction Analysis
 
-**VERA** is an occurrence-calibrated framework for mapping climatic departure
-from a species' occupied environmental reference. It separates five questions
-that are often compressed into a single surface:
+VERA is an occurrence-calibrated framework for mapping the magnitude, identity,
+direction and diagnostic resolution of climatic departure from a species'
+occupied environmental reference.
 
-- Where does a pixel sit relative to the occupied climatic reference?
-- How strong is its climatic departure?
-- Which predictor carries the leading signal, and is that lead unique?
-- Does the departure arise above or below the reference?
-- Do directional VRS and covariance-aware Mahalanobis geometry agree?
+This repository is under active development and currently provides a complete
+single-species tutorial using *Sitta krueperi* (Krüper's nuthatch). The tutorial
+contains independent 19-predictor and 36-predictor workflows, the core VERA
+outputs, covariance-aware Mahalanobis diagnostics, directional add-ons and
+publication-oriented renderers.
 
 > **Interpretive boundary:** VERA is a diagnostic and hypothesis-generating
-> framework. It does not estimate occurrence probability, habitat suitability,
-> physiological tolerance, demographic performance or causal range limitation.
+> framework. Its outputs are not occurrence probabilities, habitat-suitability
+> estimates, physiological tolerance limits or demonstrations of causal range
+> limitation.
 
-## Explore the illustrated tutorial
+## Repository status
 
-The complete worked example uses *Sitta krueperi* (Krüper's nuthatch) and covers
-occurrence preparation, 19- and 36-predictor analyses, asymmetric calibration,
-continuous climatic-departure surfaces, tie-aware attribution, directional
-diagnostics and VRS–Mahalanobis comparison.
+- Development stage: `0.1.0-dev`
+- Tutorial taxon: *Sitta krueperi*
+- Predictor profiles: 19 bioclimatic variables and 36 bioclimatic + ENVIREM
+  variables
+- Manuscript relationship: methodological implementation associated with the
+  VERA Paper 1 project; publication details will be added after acceptance
+- Public DOI: not yet assigned
 
-### [Open the illustrated VERA tutorial](https://gok-wolf.github.io/VERA-climate-diagnostics/tutorial.html)
-
-The first guide shows how VERA's diagnostic families fit together. Click the
-image to open the tutorial.
-
-<p align="center">
-  <a href="https://gok-wolf.github.io/VERA-climate-diagnostics/tutorial.html">
-    <img src="website/figures/vera-method-reading-workflow.png"
-         alt="Complete VERA diagnostic architecture from occurrence-derived calibration to bounded interpretation"
-         width="900">
-  </a>
-</p>
-
-The second guide reorganises the outputs around five questions asked when
-reading an individual landscape pixel.
-
-<p align="center">
-  <a href="https://gok-wolf.github.io/VERA-climate-diagnostics/tutorial.html">
-    <img src="website/figures/vera-pixel-reading-guide.png"
-         alt="Five-question reading guide for interpreting a VERA pixel"
-         width="900">
-  </a>
-</p>
-
-## Tutorial workflow
+## Workflow
 
 ```text
-Climate rasters ──> WorldClim + ENVIREM predictor profiles
-Occurrence data ──> domain cleaning ──> pixel-level thinning
-                              │
-                              v
-                 independent 19- and 36-predictor VERA runs
-                              │
-                              v
-             core outputs ──> directional and agreement add-ons
-                              │
-                              v
-                    ecologically bounded interpretation
+Monthly climate rasters
+        |
+        v
+ENVIREM generation -----> 36-predictor stack
+        |
+Occurrence cleaning and pixel-level thinning
+        |
+        +--------------------+
+        |                    |
+        v                    v
+19-predictor VERA      36-predictor VERA
+        |                    |
+        +----------+---------+
+                   v
+      Core, add-on and tier renderers
 ```
 
-## Repository contents
+## Scripts
 
-| Script | Purpose |
-|---|---|
-| `scripts/01_envirem_generation.R` | Generates the retained ENVIREM climatic predictors. |
-| `scripts/02_occurrence_preparation.R` | Applies the documented occurrence-preparation workflow. |
-| `scripts/03_vera_19.R` | Runs the complete 19-predictor profile. |
-| `scripts/04_vera_19_36.R` | Runs independent 19- and 36-predictor profiles. |
-| `scripts/05_render_core_outputs.R` | Renders the core VERA output family. |
-| `scripts/06_render_addons.R` | Renders directional and cross-geometry add-ons. |
+| Order | Script | Purpose |
+|---:|---|---|
+| 1 | `scripts/01_envirem_generation.R` | Generates the ENVIREM predictor layers from monthly climate rasters. |
+| 2 | `scripts/02_occurrence_preparation.R` | Removes records outside the raster domain, thins records by raster cell and performs the documented geographic isolation step. |
+| 3 | `scripts/03_vera_19.R` | Runs the complete single-species VERA workflow with 19 bioclimatic predictors. |
+| 4 | `scripts/04_vera_19_36.R` | Runs independent 19- and 36-predictor VERA workflows. This is the primary dual-profile tutorial. |
+| 5 | `scripts/05_render_core_outputs.R` | Produces maps and plots for the core VERA output family. |
+| 6 | `scripts/06_render_addons.R` | Produces maps and summaries for the directional and cross-geometry add-ons. |
+| 7 | `scripts/07_vera_species_interpreter.R` | Generates evidence-bound species summaries and paired profile-sensitivity products. |
+| 8 | `scripts/08_render_mahalanobis_tiers.R` | Optionally produces Mahalanobis occurrence-partition and empirical-tier calibration figures. |
+| 9 | `scripts/09_render_response_curve_panels.R` | Optionally produces Top-6 response-curve panels and anchor annotations. |
+| 10 | `scripts/10_render_top10_response_summaries.R` | Optionally produces Top-10 density and aligned-optimum ridge galleries. |
 
-The 36-predictor profile contains 19 WorldClim bioclimatic variables and 17
-continuous ENVIREM variables. The bounded discrete count
-`monthCountByTemp10` is not included in this profile.
+The original script checksums are recorded in
+`metadata/script_manifest.csv`. Do not silently edit a released script without
+updating its checksum, version and changelog entry.
+
+The expected per-profile archive is documented in `EXPECTED_OUTPUTS.md`.
+
+## Requirements
+
+The scripts require a recent R installation and use the following packages:
+
+```r
+terra
+dplyr
+tibble
+envirem
+ggplot2
+readr
+scales
+sf
+tidyterra
+shadowtext
+patchwork
+ggridges
+openxlsx # optional
+```
+
+Package versions used for the first public release will be frozen in an
+`renv.lock` file after the pipeline has been tested on a clean machine.
 
 ## Quick start
 
-1. Review the input-data and path requirements in the tutorial.
-2. Edit the user configuration block at the beginning of the selected script.
-3. Run the paired tutorial:
+1. Clone or download this repository.
+2. Obtain the occurrence and climatic input data described in `data/README.md`.
+3. Edit the path block at the beginning of the relevant script.
+4. Run the dual-profile tutorial:
 
 ```r
 source("scripts/04_vera_19_36.R")
 ```
 
-4. Render the completed outputs:
+5. Run the renderers after both analysis profiles finish:
 
 ```r
 source("scripts/05_render_core_outputs.R")
 source("scripts/06_render_addons.R")
+source("scripts/07_vera_species_interpreter.R")
+source("scripts/08_render_mahalanobis_tiers.R")
+source("scripts/09_render_response_curve_panels.R")
+source("scripts/10_render_top10_response_summaries.R")
 ```
 
-## Reproducibility and project status
+The current tutorial scripts contain explicit Windows paths for transparency.
+A portable path interface will be added only after the canonical calculations
+and output inventory pass a clean-machine reproducibility audit.
 
-This repository is under active development. Run-specific configuration,
-session information, code checksums and output inventories are written by the
-analysis pipeline. See `REPRODUCIBILITY.md`, `EXPECTED_OUTPUTS.md` and
-`RELEASE_CHECKLIST.md` before preparing a release or archived dataset.
+## Data policy
 
-Manuscript citation details, a permanent repository DOI and final licensing
-information will be added with the first formal release.
+Full-resolution climate rasters are not stored in this Git repository. The
+repository will contain only a small, openly redistributable example dataset,
+download instructions, source citations, licences and checksums. Large input
+and demonstration archives will be deposited separately in a DOI-bearing data
+repository.
 
-## Contact
+Occurrence coordinates will be published only when their source licences and
+species-sensitivity requirements permit redistribution.
 
-Questions and scientific correspondence:
-[botanical24@gmail.com](mailto:botanical24@gmail.com)
+## Documentation
 
-Issues and reproducibility reports may also be submitted through the repository
-issue tracker.
+The website source is stored in `website/` and will be rendered to `docs/` with
+Quarto. Until the website is published, the Markdown source remains the
+authoritative documentation.
+
+Deployment instructions are provided in `WEBSITE_DEPLOYMENT.md`. The intended
+site address is `https://gok-wolf.github.io/VERA-climate-diagnostics/`.
+
+## Citation
+
+Citation metadata are provided in `CITATION.cff`. The author list, manuscript
+reference and DOI are provisional until the first archived release.
+
+## Licence
+
+The final software, documentation and example-data licences have not yet been
+selected. See `LICENSE_DECISION.md`. Until explicit licences are added, no
+permission to redistribute or reuse repository content should be inferred.
+
+## Contact and contributions
+
+The repository is currently maintained by the VERA development team. Issues and
+contribution guidance will be enabled after the first internal reproducibility
+release.

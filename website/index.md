@@ -36,13 +36,13 @@ The worked example covers occurrence preparation, ENVIREM generation, asymmetric
 
 ### Post-analysis interpretation
 
-`08_vera_species_interpreter.R` generates species diagnostic briefs, predictor evidence tables, diagnostic alerts, interpretation-status rasters, occurrence-review queues and narrative evidence logs. It can run a 19-predictor profile, a 36-predictor profile, or both profiles with a paired sensitivity report.
+`07_vera_species_interpreter.R` generates species diagnostic briefs, predictor evidence tables, diagnostic alerts, interpretation-status rasters, occurrence-review queues and narrative evidence logs. It can run a 19-predictor profile, a 36-predictor profile, or both profiles with a paired sensitivity report.
 
 ### Optional publication renderers
 
 The optional scripts provide rapid graphics without changing canonical VERA outputs:
 
-- `07_render_mahalanobis_tiers.R` — occurrence-partition and empirical Mahalanobis tier-calibration figures;
+- `08_render_mahalanobis_tiers.R` — occurrence-partition and empirical Mahalanobis tier-calibration figures;
 - `09_render_response_curve_panels.R` — Top-6 native-unit density, asymmetric transformation and anchor-annotation products;
 - `10_render_top10_response_summaries.R` — Top-10 density galleries and aligned-optimum ridge summaries.
 
@@ -55,4 +55,3 @@ The dedicated Mahalanobis tier-calibration figure is optional. The Mahalanobis�
 3. Use the [minimum reporting guide](tutorial.md#minimum-reporting-set) to select essential manuscript maps.
 4. Consult the [output guide](outputs.md).
 5. Review the [reproducibility requirements](reproducibility.md).
-

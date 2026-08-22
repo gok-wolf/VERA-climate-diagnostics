@@ -57,7 +57,7 @@ diagnostics use the same occurrences and predictor data.
 
 ## Interpretation and optional products
 
-`08_vera_species_interpreter.R` converts exported metrics into evidence-bound
+`07_vera_species_interpreter.R` converts exported metrics into evidence-bound
 briefs, alerts, tables, review queues and interpretation-status rasters. Every
 generated narrative sentence is linked to its source metric and template.
 
@@ -65,4 +65,3 @@ Dedicated Mahalanobis tier-calibration figures, response-curve panels, density
 galleries and aligned-optimum ridges are optional publication products. They
 can support explanation or Supplementary Information but are not required to
 interpret the core VERA output family.
-

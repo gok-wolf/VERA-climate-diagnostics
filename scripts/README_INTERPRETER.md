@@ -1,6 +1,6 @@
 # VERA Species Interpreter
 
-`08_vera_species_interpreter.R` is a deterministic post-analysis layer for a
+`07_vera_species_interpreter.R` is a deterministic post-analysis layer for a
 completed VERA run. It reads exported Paper 1 outputs and writes bounded,
 traceable summaries for one focal taxon. It does not modify any canonical VRS,
 Mahalanobis, tier, attribution or add-on product.
@@ -46,7 +46,7 @@ C:/VERA/Results/36/Skr_current
 Run:
 
 ```r
-source("scripts/08_vera_species_interpreter.R")
+source("scripts/07_vera_species_interpreter.R")
 ```
 
 The same script supports all three execution modes:

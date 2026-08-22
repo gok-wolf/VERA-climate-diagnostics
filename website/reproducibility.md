@@ -50,4 +50,3 @@ Large rasters and restricted occurrence coordinates may be archived outside
 Git when licence, sensitivity or repository-size constraints require it.
 Preserve provenance, licences, checksums and stable download identifiers in the
 repository so that external data remain traceable to the archived analysis.
-

@@ -49,7 +49,7 @@ composite surface.
 outputs into the core and add-on figure families without changing the
 underlying rasters or consolidated diagnostic tables.
 
-`08_vera_species_interpreter.R` provides a separate evidence-bound
+`07_vera_species_interpreter.R` provides a separate evidence-bound
 post-analysis layer. It produces species briefs, alerts, evidence tables,
 interpretation-status rasters and occurrence-review products. When both
 profiles are selected, it also produces the 19-versus-36 sensitivity report.
@@ -58,7 +58,7 @@ profiles are selected, it also produces the 19-versus-36 sensitivity report.
 
 The following scripts are optional and do not alter canonical VERA outputs:
 
-- `07_render_mahalanobis_tiers.R` — dedicated occurrence-partition and
+- `08_render_mahalanobis_tiers.R` — dedicated occurrence-partition and
   Mahalanobis tier-calibration figures;
 - `09_render_response_curve_panels.R` — Top-6 native-unit density and
   asymmetric-transformation panels;
@@ -67,4 +67,3 @@ The following scripts are optional and do not alter canonical VERA outputs:
 
 These graphics may be supplied according to the research question,
 Supplementary Information plan and journal requirements.
-

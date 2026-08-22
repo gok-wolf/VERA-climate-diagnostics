@@ -127,7 +127,7 @@ resolve_script_file <- function() {
     if (!is.null(frame$ofile) && length(frame$ofile)) frame$ofile[1] else NULL
   }), use.names = FALSE)
   candidates <- unique(c(candidates, rev(source_files),
-                         file.path(getwd(), "08_vera_species_interpreter.R")))
+                         file.path(getwd(), "07_vera_species_interpreter.R")))
   candidates <- candidates[nzchar(candidates)]
   hit <- candidates[file.exists(candidates)]
   if (length(hit)) normalizePath(hit[1], winslash = "/", mustWork = TRUE) else NA_character_

@@ -11,14 +11,14 @@ workflow.
 | 4 | `04_vera_19_36.R` | Primary tutorial | Run independent 19- and 36-predictor VERA profiles. |
 | 5 | `05_render_core_outputs.R` | Core renderer | Render core VERA maps and plots. |
 | 6 | `06_render_addons.R` | Add-on renderer | Render directional and cross-geometry add-ons. |
-| 7 | `07_render_mahalanobis_tiers.R` | Optional renderer | Render occurrence-partition and empirical Mahalanobis tier-calibration figures for the 19- and/or 36-predictor profile. |
-| 8 | `08_vera_species_interpreter.R` | Post-analysis interpreter | Generate evidence-bound species summaries, diagnostic alerts, predictor tables, interpretation rasters, occurrence-review outputs and, when both profiles are selected, the 19-versus-36 profile-sensitivity report. |
+| 7 | `07_vera_species_interpreter.R` | Post-analysis interpreter | Generate evidence-bound species summaries, diagnostic alerts, predictor tables, interpretation rasters, occurrence-review outputs and, when both profiles are selected, the 19-versus-36 profile-sensitivity report. |
+| 8 | `08_render_mahalanobis_tiers.R` | Optional renderer | Render occurrence-partition and empirical Mahalanobis tier-calibration figures for the 19- and/or 36-predictor profile. |
 | 9 | `09_render_response_curve_panels.R` | Optional renderer | Export Top-6 anchor annotations and rapidly render native-unit density and asymmetric Z2 panels for the 19- and/or 36-predictor profile. |
 | 10 | `10_render_top10_response_summaries.R` | Optional renderer | Render Top-10 native-unit density galleries and aligned-optimum ridge summaries for the 19- and/or 36-predictor profile. |
 
 ## Species Interpreter modes
 
-Script 8 is one shared implementation; separate copies are not required. Set
+Script 7 is one shared implementation; separate copies are not required. Set
 `profiles_to_run` in its configuration block to choose the desired mode:
 
 ```r
@@ -32,10 +32,10 @@ VRS, Mahalanobis, tier, attribution or add-on product.
 
 ## Optional figure scripts
 
-Scripts 7, 9 and 10 are convenience renderers. They are not required to run
+Scripts 8, 9 and 10 are convenience renderers. They are not required to run
 VERA and do not define new diagnostic calculations.
 
-- Script 7 preserves the earlier Mahalanobis calibration story as an optional
+- Script 8 preserves the earlier Mahalanobis calibration story as an optional
   two-panel figure family.
 - Script 9 produces individual response-curve panels and a machine-readable
   annotation table for the most frequent Primary Stressors.
@@ -48,8 +48,8 @@ Scripts 9 and 10 should be run after Script 5 because they use
 `vera_pixel_counts_primary_assigned.csv` to identify the leading predictors.
 
 ```r
-source("scripts/07_render_mahalanobis_tiers.R")
-source("scripts/08_vera_species_interpreter.R")
+source("scripts/07_vera_species_interpreter.R")
+source("scripts/08_render_mahalanobis_tiers.R")
 source("scripts/09_render_response_curve_panels.R")
 source("scripts/10_render_top10_response_summaries.R")
 ```
