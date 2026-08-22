@@ -1,8 +1,8 @@
 ---
 title: "VERA: An Illustrated Tutorial"
 subtitle: "A complete worked example using Krüper's nuthatch"
-description: "Occurrence preparation, asymmetric calibration, spatial diagnostics and interpretation of eight VERA figures."
-image: figures/Figure_1.png
+description: "Occurrence preparation, asymmetric calibration, spatial diagnostics and interpretation of VERA outputs."
+image: figures/vera-brand-banner.png
 toc: true
 toc-depth: 3
 page-layout: full
@@ -12,11 +12,13 @@ lightbox: true
 
 **Variable Ecological Restriction Analysis (VERA)** is an asymmetric climatic diagnostic framework. Species distribution models have greatly advanced the description and projection of species–environment relationships. VERA addresses a complementary question: **how strongly does each pixel depart from a species' occupied climatic reference, which predictor carries the leading signal, is that lead unique or shared, and does the departure arise above or below the reference?**
 
-This repository contains the public tutorial pipeline: from climate rasters and occurrence preparation through the VERA core computation and publication-grade diagnostic figures. The traceability table below identifies the scripts and output families used for each figure.
+This repository contains the public tutorial pipeline: from climate rasters and occurrence preparation through the VERA core computation, spatial diagnostics and interpretation of the resulting outputs. The traceability table below identifies the associated scripts and output families.
 
 > **Interpretive boundary.** VERA maps climatic departure from an occupied reference. It does not estimate occurrence probability, habitat suitability, physiological tolerance, demographic performance or causal range limitation.
 
 The focal taxon throughout is *Sitta krueperi* (Krüper's Nuthatch), an eastern-Mediterranean forest species with a distribution largely restricted to Türkiye.
+
+![VERA — Variable Ecological Restriction Analysis.](figures/vera-brand-banner.png){fig-alt="VERA project banner showing the full name Variable Ecological Restriction Analysis on a black background." fig-align="center" width="65%"}
 
 ---
 
@@ -39,7 +41,7 @@ There is no discriminative learner between your points and these numbers. A wild
 - distorts the covariance matrix used for Mahalanobis calibration,
 - and shifts the empirical 80 / 95 / 99 % percentile thresholds that define the four climatic tiers.
 
-There is also a subtler failure mode. If the occurrence set is spatially oversampled near cities, roads or protected areas, **μ** and the tail breadths may partly reflect observation effort rather than the intended distribution of occupied climatic conditions.
+There is also a subtler failure mode. If occurrences remain strongly clustered near cities, roads, protected areas or intensively surveyed localities, **μ** and the tail breadths may partly reflect observation effort rather than the intended distribution of occupied climatic conditions. The pixel-level procedure below removes duplicate representation within individual raster cells, but it does not correct broader clustering among neighbouring cells. When such structure is suspected, researchers should evaluate additional distance-based thinning or another sampling-bias correction at a scale justified by the data, predictor resolution and research question, and report a sensitivity analysis rather than assuming that more aggressive thinning is always preferable ([Aiello-Lammens et al., 2015](https://doi.org/10.1111/ecog.01132)).
 
 For these reasons, the tutorial documents a three-step preprocessing cascade before VERA is invoked. These are explicit choices for this worked example; other datasets may require additional or alternative taxonomic, spatial and sampling-bias controls.
 
@@ -57,13 +59,12 @@ scripts/
 ├── 03_vera_19.R                     # Convenience: 19-predictor VERA run only
 ├── 04_vera_19_36.R                  # Canonical: dual 19- and 36-predictor VERA
 ├── 05_render_core_outputs.R         # CORE renderer — spatial and per-variable diagnostics
-├── 06_render_addons.R               # ADD-ON renderer — agreement + tail-direction diagnostics
-└── 07_render_mahalanobis_tiers.R    # Figure 4 renderer — Mahalanobis tier calibration
+└── 06_render_addons.R               # ADD-ON renderer — agreement + tail-direction diagnostics
 ```
 
 The scripts are numbered to reflect execution order. `04_vera_19_36.R` is the canonical implementation; `03_vera_19.R` is a convenience version for users who only need the classical 19 bioclimatic predictors. Both write outputs into `C:/VERA/Results/{19,36}/Skr_current/` using the exact same directory structure, so downstream renderers work identically on either result.
 
-The renderer scripts (`05`, `06`, `07`) consume completed VERA outputs and do not modify any core diagnostic. They can be re-run at any time without recomputing the analysis.
+The renderer scripts (`05`, `06`) consume completed VERA outputs and do not modify any core diagnostic. They can be re-run at any time without recomputing the analysis.
 
 ---
 
@@ -72,9 +73,13 @@ The renderer scripts (`05`, `06`, `07`) consume completed VERA outputs and do no
 
 **Script:** `01_envirem_generation.R`
 
-VERA can run on the classical 19 WorldClim / CHELSA bioclimatic variables alone, but the canonical Sitta krueperi analysis uses a 36-predictor stack: the 19 bioclimatics plus 17 ENVIREM extended variables (aridity indices, growing degree days, seasonal PET terms, thermicity, continentality, etc.).
+VERA can run on the classical 19 [WorldClim bioclimatic variables](https://www.worldclim.org/data/bioclim.html) alone, but the canonical *Sitta krueperi* analysis uses a 36-predictor stack: the 19 bioclimatics plus 17 [ENVIREM](https://envirem.github.io/) extended variables.
 
-This first script builds the 17 ENVIREM rasters from monthly climate inputs (`prec_XX`, `tmin_XX`, `tmax_XX`, `tavg_XX` for months 01–12) using the `envirem` R package. Solar radiation is derived internally for year 2000. Every ENVIREM raster is written as a separate GeoTIFF and copied into the same folder as the 19 bioclimatics, so both predictor sets share identical geometry, resolution and CRS.
+This first script builds the 17 ENVIREM rasters from monthly climate inputs (`prec_XX`, `tmin_XX`, `tmax_XX`, `tavg_XX` for months 01–12) using the `envirem` R package. Solar radiation is derived internally for year 2000.
+
+The `envirem` package can generate 18 climatic variables under the configuration used here. VERA retains 17 of them. `monthCountByTemp10` — the number of months with mean temperature above 10 °C — is excluded because it is a bounded discrete count rather than a continuous climatic predictor. This is a predictor-set design choice, not a claim that the variable lacks ecological relevance. The inventory below lists the complete 36-predictor profile used in this tutorial.
+
+![Predictor inventory for the 36-variable VERA profile: 19 WorldClim bioclimatic variables and 17 retained ENVIREM variables.](figures/vera-predictor-inventory.png){fig-alt="Table listing the codes and names of 19 WorldClim bioclimatic variables and 17 ENVIREM variables used by VERA." fig-align="center" width="100%"}
 
 > **Requirement.** All monthly rasters must have matching geometry, resolution, CRS and extent. VERA's raster validator will reject a stack with mismatched geometries.
 
@@ -143,18 +148,31 @@ The result is a single directory tree containing everything the renderer scripts
 
 ---
 
+<a id="how-vera-outputs-fit-together"></a>
+## How the VERA Outputs Fit Together
+
+Before examining individual maps, it helps to see the diagnostic architecture as a whole. The same occurrence-derived climatic reference feeds two complementary branches. The directional VRS branch separates magnitude, predictor identity and tail direction. The Mahalanobis branch describes covariance-aware multivariate departure and supplies the empirical climatic partition. Their percentile ranks are then compared to localise agreement and divergence.
+
+The guardrail band at the top of the diagram is part of the interpretation rather than an optional appendix. Sample support, tail fallback, background truncation, cap saturation, valid-predictor coverage and covariance stability determine how confidently each output can be read. The lower boxes preserve the central boundary: VERA supports climatic-departure hypotheses, but it does not establish occurrence probability, complete habitat suitability, demographic performance, dispersal or direct climatic causality.
+
+![How to read the complete VERA diagnostic architecture, from occurrence-derived calibration to ecologically bounded interpretation.](figures/vera-method-reading-workflow.png){fig-alt="Flow diagram connecting occurrences and climatic predictors to directional VRS, Mahalanobis distance, magnitude, stressor identity, direction, diagnostic comparison and bounded interpretation." fig-align="center" width="90%"}
+
+> **Terminology note.** Where a diagram uses *climatic optimum*, it refers to the occurrence-derived reference centre used for calibration. It is not an experimentally estimated physiological optimum.
+
+---
+
 <a id="stage-4"></a>
-## Stage 4 — Rendering the Diagnostic Figures
+## Stage 4 — Rendering the Diagnostic Outputs
 
-**Scripts:** `05_render_core_outputs.R`, `06_render_addons.R`, `07_render_mahalanobis_tiers.R`.
+**Scripts:** `05_render_core_outputs.R`, `06_render_addons.R`.
 
-The renderers consume the finished VERA outputs and produce every published figure in this tutorial. They do not perform any diagnostic calculation of their own — they only translate finished CSVs and GeoTIFFs into publication-grade PNGs.
+The renderers consume the finished VERA outputs and translate the completed CSV and GeoTIFF products into publication-grade visualisations. They do not change the underlying diagnostic calculations.
 
 Each renderer loops internally through both the 19- and 36-predictor result trees, so a single execution populates two parallel image directories:
 
 ```
-C:/VERA/Results/19/Images/{core_renderer_plum, addon_renderer_plum, figure4_tier_calibration}/
-C:/VERA/Results/36/Images/{core_renderer_plum, addon_renderer_plum, figure4_tier_calibration}/
+C:/VERA/Results/19/Images/{core_renderer_plum, addon_renderer_plum}/
+C:/VERA/Results/36/Images/{core_renderer_plum, addon_renderer_plum}/
 ```
 
 Missing result trees are skipped silently — running the renderers on a 19-only setup produces only the 19-profile images.
@@ -164,7 +182,11 @@ Missing result trees are skipped silently — running the renderers on a 19-only
 <a id="reading-the-outputs"></a>
 ## Reading the Outputs — Guided Figure Tour
 
-The eight figures below move from calibration to spatial interpretation. Figure 1 introduces the asymmetric geometry; Figures 2–3 compare predictor-level patterns; Figures 4–5 map continuous departure and covariance-aware context; Figures 6–8 resolve attribution, direction and cross-geometry agreement.
+The practical reading guide below reorganises VERA around five questions asked at a pixel. It is a recommended interpretation order, not the internal computational order of the pipeline: first establish covariance-aware climatic context; then read restriction magnitude; resolve predictor identity and uniqueness; determine direction relative to the reference; and finally examine agreement between VRS and Mahalanobis geometry.
+
+![Five-question reading guide for interpreting a VERA pixel.](figures/vera-pixel-reading-guide.png){fig-alt="Five-column guide asking where a pixel sits in occupied climate, how strong restriction is, which predictor leads, which side of the reference dominates and whether VRS and Mahalanobis agree." fig-align="center" width="100%"}
+
+The eight worked outputs that follow move from calibration to spatial interpretation. The first examples introduce and compare asymmetric predictor-level geometry; the subsequent maps describe continuous departure, covariance-aware context, attribution, direction and cross-geometry agreement.
 
 ---
 
@@ -362,26 +384,6 @@ Three classes appear on both maps:
 Where the panels diverge, the strongest individual directional score and the summed directional scores tell different stories. Such pixels separate a large predictor-specific departure on one side from cumulative contributions on the other.
 
 Together, Figures 6 and 8 form a matched attribution pair. Figure 6 says *which variable* carries the leading score; Figure 8 says *which direction* dominates. Neither output is converted into a suitability or causal surface.
-
----
-
-<a id="which-script-produced-which-figure"></a>
-## Which Script Produced Which Figure
-
-The table records the analysis or rendering route associated with each tutorial figure. Bespoke educational compositions should retain their own source script and checksum alongside the canonical renderers.
-
-| Figure | Renderer script | Output subfolder | Notes |
-|---|---|---|---|
-| 1 | (bespoke educational figure) | `response_curves/` | Conceptual teaching figure — one predictor, two panels |
-| 2 | `05_render_core_outputs.R` + native-unit density script | `response_curves/` | Top-10 grid in native units |
-| 3 | `05_render_core_outputs.R` + aligned-optimum ridge script | `response_curves/` | Top-10 aligned-optimum ridges |
-| 4 | `05_render_core_outputs.R` | `core_renderer_plum/` | Occurrence partition + Mean/Max/Δ VRS + VPI |
-| 5 | `07_render_mahalanobis_tiers.R` | `figure4_tier_calibration/` | Empirical tier calibration; the output-folder name reflects its original renderer numbering |
-| 6 | `05_render_core_outputs.R` | `core_renderer_plum/` | Primary / secondary / TooHigh / TooLow attribution |
-| 7 | `06_render_addons.R` | `addon_renderer_plum/` | VRS vs Mahalanobis agreement pipeline (Branch A) |
-| 8 | `06_render_addons.R` | `addon_renderer_plum/` | Dominant vs Net tail direction (Branch B) |
-
-Every subfolder above sits under `C:/VERA/Results/{19 or 36}/Images/`. Running any renderer on both result trees produces mirror-image galleries for the two predictor profiles.
 
 ---
 
