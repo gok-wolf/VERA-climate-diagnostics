@@ -1,12 +1,15 @@
 package,used_by,purpose,version_status
-terra,01;02;03;04;05;06,Raster and vector geospatial processing,TO_BE_FROZEN
+terra,01;02;03;04;05;06;08;09;10,Raster and vector geospatial processing,TO_BE_FROZEN
 envirem,01,ENVIREM variable generation,TO_BE_FROZEN
-dplyr,03;04;05;06;07,Data manipulation and consolidated tables,TO_BE_FROZEN
-tibble,03;04,Structured tabular outputs,TO_BE_FROZEN
-ggplot2,05;06;07,Publication-oriented graphics,TO_BE_FROZEN
+dplyr,03;04;05;06;07;08;09;10,Data manipulation and consolidated tables,TO_BE_FROZEN
+tibble,03;04;07;08;09;10,Structured tabular outputs,TO_BE_FROZEN
+ggplot2,05;06;07;09;10,Publication-oriented graphics,TO_BE_FROZEN
 sf,05;06,Spatial objects used by renderers,TO_BE_FROZEN
 tidyterra,05;06,ggplot rendering of terra rasters,TO_BE_FROZEN
 shadowtext,05,Map-label rendering,TO_BE_FROZEN
 scales,05;06;07,Plot scales and labels,TO_BE_FROZEN
 grid,05;06,Graphic layout utilities,BASE_R
-readr,07,Reading consolidated CSV inputs,TO_BE_FROZEN
+readr,07;09;10,Reading and writing CSV products,TO_BE_FROZEN
+patchwork,10,Combining optional multi-panel density figures,TO_BE_FROZEN
+ggridges,10,Rendering optional aligned-optimum ridge figures,TO_BE_FROZEN
+openxlsx,08,Optional formatted Predictor Evidence Matrix export,OPTIONAL_TO_BE_FROZEN

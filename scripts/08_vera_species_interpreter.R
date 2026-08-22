@@ -127,7 +127,7 @@ resolve_script_file <- function() {
     if (!is.null(frame$ofile) && length(frame$ofile)) frame$ofile[1] else NULL
   }), use.names = FALSE)
   candidates <- unique(c(candidates, rev(source_files),
-                         file.path(getwd(), "07_vera_species_interpreter.R")))
+                         file.path(getwd(), "08_vera_species_interpreter.R")))
   candidates <- candidates[nzchar(candidates)]
   hit <- candidates[file.exists(candidates)]
   if (length(hit)) normalizePath(hit[1], winslash = "/", mustWork = TRUE) else NA_character_
@@ -237,6 +237,7 @@ write_formatted_xlsx <- function(df, path, sheet = "Predictor evidence") {
     openxlsx::freezePane(wb, sheet, firstRow = TRUE, firstCol = TRUE)
     openxlsx::setColWidths(wb, sheet, cols = seq_len(ncol(df)), widths = "auto")
     header <- openxlsx::createStyle(
+      fontName = "Arial",
       textDecoration = "bold",
       fgFill = "#D9EAF7",
       fontColour = "#17202A",
@@ -246,6 +247,13 @@ write_formatted_xlsx <- function(df, path, sheet = "Predictor evidence") {
     )
     openxlsx::addStyle(wb, sheet, header, rows = 1,
                        cols = seq_len(ncol(df)), gridExpand = TRUE)
+    body <- openxlsx::createStyle(fontName = "Arial")
+    if (nrow(df) > 0L) {
+      openxlsx::addStyle(
+        wb, sheet, body, rows = 2:(nrow(df) + 1L),
+        cols = seq_len(ncol(df)), gridExpand = TRUE, stack = TRUE
+      )
+    }
     openxlsx::saveWorkbook(wb, path, overwrite = cfg$overwrite)
     "written"
   }, error = function(e) {
