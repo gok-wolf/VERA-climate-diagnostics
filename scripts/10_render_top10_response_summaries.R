@@ -10,6 +10,7 @@
 #
 # These figures summarise completed VERA outputs. They do not modify anchor
 # statistics, Primary Stressor assignments, VRS surfaces, or tier products.
+# Each profile output directory also receives README_10.txt.
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -104,9 +105,27 @@ dir_make <- function(path) {
   normalizePath(path, winslash = "/", mustWork = TRUE)
 }
 
+write_lines_utf8 <- function(lines, path) {
+  con <- file(path, open = "w", encoding = "UTF-8")
+  on.exit(close(con), add = TRUE)
+  writeLines(lines, con = con, useBytes = TRUE)
+  invisible(path)
+}
+
 read_required_csv <- function(path) {
   if (!file.exists(path)) stop("Required file was not found: ", path)
   read_csv(path, show_col_types = FALSE)
+}
+
+resolve_primary_counts_file <- function(run_dir) {
+  filename <- "vera_pixel_counts_primary_assigned.csv"
+  candidates <- c(
+    file.path(dirname(run_dir), "Images", "core_renderer_plum", filename),
+    file.path(run_dir, "Images", "core_renderer_plum", filename)
+  )
+  hit <- candidates[file.exists(candidates)]
+  if (length(hit)) return(hit[1])
+  candidates[1]
 }
 
 top_primary_variables <- function(counts_file, top_n) {
@@ -179,10 +198,7 @@ prepare_profile_data <- function(profile, run_dir, raster_dir) {
   model_file <- file.path(
     run_dir, "csvs", paste0(cfg$species_code, "_02_model_reference.csv")
   )
-  counts_file <- file.path(
-    run_dir, "Images", "core_renderer_plum",
-    "vera_pixel_counts_primary_assigned.csv"
-  )
+  counts_file <- resolve_primary_counts_file(run_dir)
   required <- c(model_file, counts_file, cfg$occurrence_file)
   missing <- required[!file.exists(required)]
   if (length(missing)) {
@@ -459,6 +475,11 @@ render_profile <- function(profile) {
   density_file <- render_density_gallery(data, output_dir)
   ridge_file <- render_aligned_ridges(data, output_dir)
 
+  anchor_file <- file.path(
+    output_dir,
+    paste0(cfg$species_code, "_", profile,
+           "_Top", length(data$variables), "_Summary_Anchors.csv")
+  )
   write_csv(
     data$metadata %>%
       mutate(
@@ -468,12 +489,100 @@ render_profile <- function(profile) {
         display_order = match(.data$variable, data$variables),
         .before = 1
       ),
-    file.path(
-      output_dir,
-      paste0(cfg$species_code, "_", profile,
-             "_Top", length(data$variables), "_Summary_Anchors.csv")
-    )
+    anchor_file
   )
+
+  readme_file <- file.path(output_dir, "README_10.txt")
+  model_file <- file.path(
+    run_dir, "csvs", paste0(cfg$species_code, "_02_model_reference.csv")
+  )
+  counts_file <- resolve_primary_counts_file(run_dir)
+  readme_text <- c(
+    "VERA OPTIONAL TOP RESPONSE-SUMMARY PACKAGE",
+    "=============================================",
+    "",
+    paste0("Species: ", cfg$species_label, " (", cfg$species_code, ")"),
+    paste0("Predictor profile: ", profile),
+    "Renderer: 10_render_top10_response_summaries.R",
+    "Status: OPTIONAL summary and publication-oriented product",
+    "",
+    "PURPOSE",
+    "-------",
+    "This directory contains compact multi-predictor summaries for the most",
+    "frequently assigned Primary Stressors in the completed VERA profile.",
+    "Script 10 reads existing VERA calibration outputs, occurrence data, and",
+    "predictor rasters. It does not recalculate or modify canonical VERA results.",
+    "",
+    "INPUTS",
+    "------",
+    paste0("- ", basename(model_file)),
+    paste0("- ", basename(counts_file)),
+    paste0("- Occurrence table: ", normalizePath(
+      cfg$occurrence_file, winslash = "/", mustWork = FALSE
+    )),
+    paste0("- Predictor GeoTIFF directory: ", normalizePath(
+      raster_dir, winslash = "/", mustWork = FALSE
+    )),
+    "",
+    "PREDICTOR SELECTION",
+    "-------------------",
+    paste0("Requested Top N: ", cfg$top_n),
+    paste0("Retained predictors: ", paste(data$variables, collapse = ", ")),
+    "Predictors are ranked using the existing Primary-assignment pixel-count",
+    "table. Missing rasters or invalid anchor statistics may reduce the number",
+    "retained. Assignment frequency does not establish causal importance.",
+    "",
+    "OUTPUT GUIDE",
+    "------------",
+    paste0("Native-unit density gallery: ", basename(density_file)),
+    "- Compares sampled landscape-background and occurrence distributions in",
+    "  each predictor's native units.",
+    "- The red line is mu; shaded intervals represent the lower and upper",
+    "  occurrence-derived scales used by VERA.",
+    "",
+    paste0("Aligned-reference ridge gallery: ", basename(ridge_file)),
+    "- Places predictor distributions on their asymmetric standardized axes so",
+    "  that the occurrence-derived reference centre is aligned at zero.",
+    "- Negative and positive values represent lower- and upper-side departure",
+    "  after scaling by sigma_L and sigma_U, respectively.",
+    paste0("- The displayed standardized range is limited to +/-",
+           cfg$standardized_display_limit, " for visual comparison."),
+    "",
+    paste0("Anchor summary CSV: ", basename(anchor_file)),
+    "- Records mu, sigma_L, sigma_U, profile identity, and display order for the",
+    "  predictors retained in the two galleries.",
+    "",
+    "READING RULES",
+    "-------------",
+    "1. The phrase aligned optimum is graphical shorthand for aligning the",
+    "   occurrence-derived reference centres. It does not demonstrate a",
+    "   physiological optimum, fitness maximum, or causal ecological optimum.",
+    "2. Density overlap describes distributions in the selected data; it does",
+    "   not estimate suitability, occurrence probability, or model accuracy.",
+    "3. Standardized ridge shapes support visual comparison across predictors,",
+    "   but do not make different variables ecologically interchangeable.",
+    "4. The display limit is graphical clipping, not a VRS cap or biological",
+    "   threshold.",
+    "5. The 19- and 36-predictor summaries are profile-specific. Differences may",
+    "   reflect predictor composition and should not be read as validation or",
+    "   proof that one profile is superior.",
+    "6. These products are optional and should be selected according to the",
+    "   research question, Supplementary Information plan, and journal policy.",
+    "",
+    "REPRODUCIBILITY",
+    "---------------",
+    paste0("Background sample size: ", cfg$background_sample_size),
+    paste0("Random seed: ", cfg$random_seed),
+    paste0("Standardized display limit: +/-", cfg$standardized_display_limit),
+    "",
+    "REPORTING NOTE",
+    "--------------",
+    "Report predictor provenance, occurrence preparation, anchor statistics,",
+    "sampling settings, display limits, software version, and predictor-selection",
+    "rules in the manuscript or Supplementary Information.",
+    ""
+  )
+  write_lines_utf8(readme_text, readme_file)
 
   cat(">>> Optional Top-10 summaries completed:\n")
   cat("    ", density_file, "\n", sep = "")

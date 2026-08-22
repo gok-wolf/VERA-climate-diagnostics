@@ -36,11 +36,14 @@ Scripts 8, 9 and 10 are convenience renderers. They are not required to run
 VERA and do not define new diagnostic calculations.
 
 - Script 8 preserves the earlier Mahalanobis calibration story as an optional
-  two-panel figure family.
+  two-panel figure family and writes a profile-specific `README_08.txt` beside
+  the exported figures.
 - Script 9 produces individual response-curve panels and a machine-readable
-  annotation table for the most frequent Primary Stressors.
+  annotation table for the most frequent Primary Stressors, and writes
+  `README_09.txt` under `Images/optional_response_curves/`.
 - Script 10 produces compact gallery figures for readers who want a rapid
-  overview of native-unit and standardized predictor profiles.
+  overview of native-unit and standardized predictor profiles, and writes
+  `README_10.txt` under `Images/optional_response_summaries/`.
 
 All new optional graphics use Arial throughout. Each optional renderer accepts
 `19L`, `36L`, or both profiles through its `profiles_to_run` configuration.

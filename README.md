@@ -80,9 +80,9 @@ Occurrence data ──> domain cleaning ──> pixel-level thinning
 | `scripts/05_render_core_outputs.R` | Renders the core VERA output family. |
 | `scripts/06_render_addons.R` | Renders directional and cross-geometry add-ons. |
 | `scripts/07_vera_species_interpreter.R` | Generates evidence-bound species summaries, alerts, review products and paired profile-sensitivity outputs. |
-| `scripts/08_render_mahalanobis_tiers.R` | Optionally renders occurrence-partition and Mahalanobis tier-calibration figures. |
-| `scripts/09_render_response_curve_panels.R` | Optionally renders Top-6 native-unit density and asymmetric-transformation panels. |
-| `scripts/10_render_top10_response_summaries.R` | Optionally renders Top-10 density and aligned-optimum ridge galleries. |
+| `scripts/08_render_mahalanobis_tiers.R` | Optionally renders occurrence-partition and Mahalanobis tier-calibration figures with a profile-specific `README_08.txt`. |
+| `scripts/09_render_response_curve_panels.R` | Optionally renders Top-6 native-unit density and asymmetric-transformation panels with `README_09.txt`. |
+| `scripts/10_render_top10_response_summaries.R` | Optionally renders Top-10 density and aligned-reference ridge galleries with `README_10.txt`. |
 
 The 36-predictor profile contains 19 WorldClim bioclimatic variables and 17
 continuous ENVIREM variables. The bounded discrete count

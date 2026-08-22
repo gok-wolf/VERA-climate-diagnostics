@@ -14,7 +14,17 @@ All notable repository changes will be documented here.
   tier-calibration renderer as Script 08.
 - Standardised the new graphical outputs and optional Excel table to Arial.
 - Updated script checksums, package requirements and the script catalogue.
-- Added provisional Citation File Format metadata for the development release.
+- Deferred formal Citation File Format metadata until authorship, release and
+  DOI details are finalised.
+- Added an automatically generated, manifest-tracked README to the paired
+  profile-sensitivity output package.
+- Added a profile-specific `README_08.txt` guide to each optional Mahalanobis
+  tier-calibration figure directory.
+- Added profile-specific `README_09.txt` and `README_10.txt` guides to the
+  optional response-panel and response-summary directories.
+- Corrected Scripts 09 and 10 to resolve the Script 05 Primary-assignment count
+  table from the profile-level `Images/core_renderer_plum/` directory, with a
+  legacy nested-path fallback.
 
 ## 0.1.0-dev — 2026-08-20
 

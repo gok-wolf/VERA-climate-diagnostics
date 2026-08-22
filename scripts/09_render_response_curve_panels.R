@@ -8,6 +8,7 @@
 # assigned Primary Stressors, exports their anchor annotations, and renders
 # native-unit occurrence/background densities and asymmetric Z2 transforms.
 # These are explanatory graphics; no canonical VERA result is recalculated.
+# Each profile output directory also receives README_09.txt.
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -67,9 +68,27 @@ dir_make <- function(path) {
   normalizePath(path, winslash = "/", mustWork = TRUE)
 }
 
+write_lines_utf8 <- function(lines, path) {
+  con <- file(path, open = "w", encoding = "UTF-8")
+  on.exit(close(con), add = TRUE)
+  writeLines(lines, con = con, useBytes = TRUE)
+  invisible(path)
+}
+
 read_required_csv <- function(path) {
   if (!file.exists(path)) stop("Required file was not found: ", path)
   read_csv(path, show_col_types = FALSE)
+}
+
+resolve_primary_counts_file <- function(run_dir) {
+  filename <- "vera_pixel_counts_primary_assigned.csv"
+  candidates <- c(
+    file.path(dirname(run_dir), "Images", "core_renderer_plum", filename),
+    file.path(run_dir, "Images", "core_renderer_plum", filename)
+  )
+  hit <- candidates[file.exists(candidates)]
+  if (length(hit)) return(hit[1])
+  candidates[1]
 }
 
 theme_vera_response <- function(is_labeled, palette) {
@@ -316,10 +335,7 @@ render_profile <- function(profile) {
   model_file <- file.path(
     csv_dir, paste0(cfg$species_code, "_02_model_reference.csv")
   )
-  counts_file <- file.path(
-    run_dir, "Images", "core_renderer_plum",
-    "vera_pixel_counts_primary_assigned.csv"
-  )
+  counts_file <- resolve_primary_counts_file(run_dir)
 
   required <- c(occurrence_file, model_file, counts_file)
   missing <- required[!file.exists(required)]
@@ -337,13 +353,14 @@ render_profile <- function(profile) {
   top_variables <- top_primary_variables(counts_file, cfg$top_n)
   if (!length(top_variables)) stop("No Primary Stressors found for profile ", key)
 
+  annotation_file <- file.path(
+    output_dir,
+    paste0(cfg$species_code, "_", profile,
+           "_top", length(top_variables), "_response_annotations.csv")
+  )
   write_csv(
     annotation_table(top_variables, model_ref, profile),
-    file.path(
-      output_dir,
-      paste0(cfg$species_code, "_", profile,
-             "_top", length(top_variables), "_response_annotations.csv")
-    )
+    annotation_file
   )
 
   for (variable in top_variables) {
@@ -388,6 +405,95 @@ render_profile <- function(profile) {
       }
     }
   }
+
+  readme_file <- file.path(output_dir, "README_09.txt")
+  readme_text <- c(
+    "VERA OPTIONAL RESPONSE-CURVE PANEL PACKAGE",
+    "==============================================",
+    "",
+    paste0("Species: ", cfg$species_label, " (", cfg$species_code, ")"),
+    paste0("Predictor profile: ", profile),
+    "Renderer: 09_render_response_curve_panels.R",
+    "Status: OPTIONAL explanatory and publication-oriented product",
+    "",
+    "PURPOSE",
+    "-------",
+    "This directory contains native-unit density panels and deterministic",
+    "asymmetric Z2 transformation panels for the most frequently assigned",
+    "Primary Stressors in the completed VERA profile. Script 09 reads existing",
+    "VERA outputs and predictor rasters; it does not refit or modify VERA.",
+    "",
+    "IMPORTANT TERMINOLOGY",
+    "---------------------",
+    "The term response curve in this optional renderer refers to the fixed VERA",
+    "asymmetric transformation applied around the occurrence-derived reference.",
+    "These panels are not fitted species-response functions, marginal-effect",
+    "plots, occurrence-probability curves, or habitat-suitability curves.",
+    "",
+    "INPUTS",
+    "------",
+    paste0("- ", basename(occurrence_file)),
+    paste0("- ", basename(model_file)),
+    paste0("- ", basename(counts_file)),
+    paste0("- Predictor GeoTIFF directory: ", normalizePath(
+      raster_dir, winslash = "/", mustWork = FALSE
+    )),
+    "",
+    "PREDICTOR SELECTION",
+    "-------------------",
+    paste0("Requested Top N: ", cfg$top_n),
+    paste0("Resolved predictors: ", paste(top_variables, collapse = ", ")),
+    "Predictors are selected from the existing Primary-assignment pixel-count",
+    "table. Frequency of assignment is a diagnostic summary, not evidence of",
+    "ecological importance or causal limitation.",
+    "",
+    "OUTPUT GUIDE",
+    "------------",
+    "Density panels:",
+    "- Compare sampled landscape-background values with retained occurrence",
+    "  values in each predictor's native units.",
+    "- The vertical reference line is mu; the shaded lower and upper intervals",
+    "  are based on sigma_L and sigma_U from the completed VERA calibration.",
+    "",
+    "Asymmetric Z2 panels:",
+    "- Display the deterministic squared standardized departure used by VERA.",
+    "- Lower- and upper-side values are scaled separately by sigma_L and",
+    "  sigma_U, then censored at the configured display cap.",
+    "",
+    "Annotation CSV:",
+    paste0("- ", basename(annotation_file)),
+    "- Records the plotted anchors, asymmetry diagnostics, and configured cap.",
+    "",
+    "DIRECTORY GUIDE",
+    "---------------",
+    paste0("Styles: ", paste(cfg$styles_to_run, collapse = ", ")),
+    paste0("Modes: ", paste(cfg$modes_to_run, collapse = ", ")),
+    "Each style directory contains the same underlying diagnostic information.",
+    "Labeled and Unlabeled versions differ only in presentation and are supplied",
+    "for flexible figure assembly.",
+    "",
+    "READING RULES",
+    "-------------",
+    "1. Background and occurrence densities describe sampled distributions;",
+    "   they do not estimate occurrence probability or model performance.",
+    "2. mu, sigma_L, and sigma_U are occurrence-derived calibration statistics,",
+    "   not demonstrated physiological optima or tolerance limits.",
+    "3. The Z2 transformation describes climatic departure and numerical",
+    "   censoring. It does not establish habitat quality or ecological causation.",
+    "4. Background values are a reproducible regular sample controlled by the",
+    paste0("   configured sample size (", cfg$background_sample_size,
+           ") and random seed (", cfg$random_seed, ")."),
+    "5. These products are optional and should be selected according to the",
+    "   research question, Supplementary Information plan, and journal policy.",
+    "",
+    "REPORTING NOTE",
+    "--------------",
+    "Report predictor provenance, native units, occurrence preparation, anchor",
+    "statistics, sampling settings, VRS cap, software version, and the rule used",
+    "to select the displayed predictors.",
+    ""
+  )
+  write_lines_utf8(readme_text, readme_file)
 
   cat(">>> Optional response curves completed: ", output_dir, "\n", sep = "")
   invisible(output_dir)

@@ -7,6 +7,8 @@
 # This renderer reads completed canonical VERA CSV outputs. It does not
 # recalculate or modify Mahalanobis distances, occurrence partitions, tier
 # thresholds, VRS surfaces, or any other canonical product.
+# Each profile output directory also receives README_08.txt with a concise
+# interpretation and file guide.
 # =============================================================================
 
 suppressPackageStartupMessages({
@@ -83,6 +85,13 @@ theme_optional <- theme_classic(base_family = font_main) +
 dir_make <- function(path) {
   dir.create(path, recursive = TRUE, showWarnings = FALSE)
   normalizePath(path, winslash = "/", mustWork = TRUE)
+}
+
+write_lines_utf8 <- function(lines, path) {
+  con <- file(path, open = "w", encoding = "UTF-8")
+  on.exit(close(con), add = TRUE)
+  writeLines(lines, con = con, useBytes = TRUE)
+  invisible(path)
 }
 
 save_plot_pair <- function(plot, out_dir, stub, width = 7.4, height = 5.8) {
@@ -200,7 +209,7 @@ render_profile <- function(profile) {
     ) +
     theme_optional
 
-  save_plot_pair(
+  occurrence_plot_files <- save_plot_pair(
     panel_a, out_dir,
     paste0(cfg$species_code, "_", profile,
            "_Mahalanobis_Occurrence_Distribution")
@@ -311,12 +320,17 @@ render_profile <- function(profile) {
     ) +
     theme_optional
 
-  save_plot_pair(
+  tier_plot_files <- save_plot_pair(
     panel_b, out_dir,
     paste0(cfg$species_code, "_", profile,
            "_Empirical_Tier_Calibration")
   )
 
+  threshold_file <- file.path(
+    out_dir,
+    paste0(cfg$species_code, "_", profile,
+           "_Resolved_Tier_Thresholds.csv")
+  )
   write_csv(
     mutate(
       break_df,
@@ -325,12 +339,84 @@ render_profile <- function(profile) {
       profile = profile,
       .before = 1
     ),
-    file.path(
-      out_dir,
-      paste0(cfg$species_code, "_", profile,
-             "_Resolved_Tier_Thresholds.csv")
-    )
+    threshold_file
   )
+
+  readme_file <- file.path(out_dir, "README_08.txt")
+  readme_text <- c(
+    "VERA OPTIONAL MAHALANOBIS TIER-CALIBRATION FIGURES",
+    "====================================================",
+    "",
+    paste0("Species: ", cfg$species_label, " (", cfg$species_code, ")"),
+    paste0("Predictor profile: ", profile),
+    "Renderer: 08_render_mahalanobis_tiers.R",
+    "Status: OPTIONAL publication and Supplementary Information product",
+    "",
+    "PURPOSE",
+    "-------",
+    "This directory contains publication-oriented visualisations of existing",
+    "VERA Mahalanobis occurrence partitions and empirical climatic-tier",
+    "calibration. Script 08 does not recalculate or modify Mahalanobis",
+    "distances, occurrence partitions, tier thresholds, VRS surfaces, or any",
+    "other canonical VERA product.",
+    "",
+    "INPUTS",
+    "------",
+    paste0("- ", basename(occurrence_file)),
+    paste0("- ", basename(model_file)),
+    "",
+    "OUTPUT GUIDE",
+    "------------",
+    "Occurrence Distribution figures:",
+    "- Display occurrence-level climatic Mahalanobis-distance densities for",
+    "  the existing Core occupied and Peripheral partitions.",
+    "- The dashed vertical line is the existing core/peripheral threshold.",
+    "- The panel visualises the rule-based partition; it is not independent",
+    "  validation of that partition.",
+    "",
+    "Empirical Tier Calibration figures:",
+    "- Display the empirical cumulative distribution of Mahalanobis distance",
+    "  within the existing core-occupied climatic reference.",
+    "- The 80%, 95%, and 99% boundaries are the existing empirical tier",
+    "  thresholds exported by the completed VERA run.",
+    "",
+    "Resolved Tier Thresholds CSV:",
+    "- Records the three plotted empirical boundaries and their resolved",
+    "  Mahalanobis-distance values.",
+    "",
+    "FILES",
+    "-----",
+    paste0("- ", basename(occurrence_plot_files[1])),
+    paste0("- ", basename(occurrence_plot_files[2])),
+    paste0("- ", basename(tier_plot_files[1])),
+    paste0("- ", basename(tier_plot_files[2])),
+    paste0("- ", basename(threshold_file)),
+    "",
+    "READING RULES",
+    "-------------",
+    "1. Mahalanobis distance is a covariance-aware, directionally symmetric",
+    "   measure of climatic departure from the occupied reference.",
+    "2. Larger distance indicates greater multivariate climatic departure. It",
+    "   does not mean poorer habitat, lower occurrence probability, or lower",
+    "   physiological performance.",
+    "3. The four tiers are empirical diagnostic classes, not physiological",
+    "   limits, suitability classes, or causal ecological thresholds.",
+    "4. The 19- and 36-predictor profiles have different dimensional geometry.",
+    "   Their raw Mahalanobis-distance magnitudes should not be treated as",
+    "   directly interchangeable.",
+    "5. Files with and without legends contain the same plotted data. The",
+    "   legend-free versions are supplied only for flexible panel assembly.",
+    "6. These figures are optional. Their inclusion should follow the research",
+    "   question, Supplementary Information plan, and journal requirements.",
+    "",
+    "REPORTING NOTE",
+    "--------------",
+    "Report the occurrence preparation, covariance treatment, core-partition",
+    "rule, empirical tier probabilities, predictor profile, and software",
+    "version in the manuscript or Supplementary Information.",
+    ""
+  )
+  write_lines_utf8(readme_text, readme_file)
 
   cat(
     ">>> Optional Mahalanobis tier figures completed for profile ",

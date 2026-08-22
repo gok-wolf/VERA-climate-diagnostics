@@ -19,6 +19,7 @@
 #
 # Paired product
 #   7. 19-versus-36 Profile Sensitivity Report     (.md + .csv + .tif)
+#   8. Profile Sensitivity Package README           (.txt)
 #
 # INTERPRETIVE LIMIT
 # These outputs describe climatic departure, diagnostic resolution, evidence
@@ -1113,6 +1114,63 @@ build_profile_comparison <- function(result19, result36) {
   rasters <- dir_make(file.path(out_root, "rasters"))
   machine <- dir_make(file.path(out_root, "machine_readable"))
 
+  readme_file <- file.path(out_root, "README.txt")
+  readme_text <- c(
+    "VERA 19-VERSUS-36 PROFILE SENSITIVITY PACKAGE",
+    "================================================",
+    "",
+    paste0("Species: ", cfg$species_label, " (", cfg$species_code, ")"),
+    "",
+    "PURPOSE",
+    "-------",
+    "This package compares completed 19-predictor and 36-predictor VERA profiles.",
+    "It describes sensitivity to predictor-profile composition. It does not",
+    "identify either profile as ecological truth, external validation, or a",
+    "universally superior predictor set.",
+    "",
+    "DIRECTORY GUIDE",
+    "---------------",
+    "human_readable/  Evidence-bound Markdown summary for researchers.",
+    "tables/          Summary metrics, tier cross-tabulation, and Primary",
+    "                 Stressor transition tables.",
+    "rasters/         Spatial rank, tier, and Primary-transition comparisons.",
+    "machine_readable/ Narrative evidence and provenance manifests intended",
+    "                  for software-assisted review and audit.",
+    "",
+    "READING RULES",
+    "-------------",
+    "1. Raw Mean VRS magnitudes are not treated as directly interchangeable",
+    "   across profiles with different predictor counts. Use percentile-rank",
+    "   differences, tier agreement, and named attribution transitions.",
+    "2. Tier agreement describes stability of empirical climatic-departure",
+    "   classes across the two profiles.",
+    "3. The full Primary transition table uses deterministic tie-broken labels.",
+    "   A label in that table does not necessarily represent a strict maximum.",
+    "4. Use the strict-unique Primary transition table when interpretation",
+    "   requires one unshared leading predictor in both profiles.",
+    "5. ENVIREM attribution in the 36-predictor profile indicates sensitivity",
+    "   of local attribution to profile composition, not profile superiority.",
+    "6. These products describe climatic departure and diagnostic attribution.",
+    "   They do not estimate occurrence probability, habitat suitability,",
+    "   physiological tolerance, demographic performance, dispersal, or",
+    "   ecological causation.",
+    "",
+    "PROVENANCE",
+    "----------",
+    "The interpreter manifest records the input and output files, checksums,",
+    "and available profile-level interpreter manifests used for this package.",
+    "The narrative evidence table links each generated report sentence to its",
+    "source metric and raw value.",
+    "",
+    "REPORTING NOTE",
+    "--------------",
+    "This README explains the output package. It does not replace the Methods,",
+    "Results, interpretive limits, or data-provenance statements required in a",
+    "manuscript or Supplementary Information.",
+    ""
+  )
+  write_lines_utf8(readme_text, readme_file)
+
   p19 <- result19$obj$paths
   p36 <- result36$obj$paths
   mean19 <- rast(p19$mean_vrs); mean36 <- rast(p36$mean_vrs)
@@ -1363,7 +1421,7 @@ build_profile_comparison <- function(result19, result36) {
                                     "_19_vs_36_narrative_evidence.csv"))
   write.csv(evidence_log, evidence_file, row.names = FALSE)
 
-  files <- c(summary_file, tier_cross_file, transition_file,
+  files <- c(readme_file, summary_file, tier_cross_file, transition_file,
              strict_unique_transition_file, report_file, evidence_file,
              rank_diff_file, tier_diff_file, primary_file)
   utc <- format(Sys.time(), tz = "UTC", usetz = TRUE)

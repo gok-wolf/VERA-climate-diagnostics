@@ -120,6 +120,8 @@ C:/VERA/Results/Skr_profile_sensitivity/
 
 Products include:
 
+- a root-level `README.txt` explaining the package structure and safe reading
+  rules;
 - mean-VRS percentile-rank difference raster;
 - tier-difference raster and tier cross-tabulation;
 - tie-broken Primary Stressor transition raster and table;
