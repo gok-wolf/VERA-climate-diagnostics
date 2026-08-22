@@ -27,7 +27,7 @@ website:
         aria-label: GitHub
   page-footer:
     left: "VERA development documentation"
-    right: "Development version 0.1.0-dev"
+    right: "Development version 0.2.0-dev"
 
 format:
   html:
@@ -38,5 +38,6 @@ format:
     code-fold: true
     code-tools: true
     link-external-newwindow: true
+
 execute:
   freeze: auto

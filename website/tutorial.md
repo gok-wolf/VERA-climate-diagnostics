@@ -12,7 +12,7 @@ lightbox: true
 
 **Variable Ecological Restriction Analysis (VERA)** is an asymmetric climatic diagnostic framework. Species distribution models have greatly advanced the description and projection of species–environment relationships. VERA addresses a complementary question: **how strongly does each pixel depart from a species' occupied climatic reference, which predictor carries the leading signal, is that lead unique or shared, and does the departure arise above or below the reference?**
 
-This repository contains the public tutorial pipeline: from climate rasters and occurrence preparation through the VERA core computation, spatial diagnostics and interpretation of the resulting outputs. The traceability table below identifies the associated scripts and output families.
+This repository contains the public tutorial pipeline: from climate rasters and occurrence preparation through the VERA core computation, spatial diagnostics and interpretation of the resulting outputs. Repository manifests and documentation identify the associated scripts and output families.
 
 > **Interpretive boundary.** VERA maps climatic departure from an occupied reference. It does not estimate occurrence probability, habitat suitability, physiological tolerance, demographic performance or causal range limitation.
 
@@ -59,12 +59,16 @@ scripts/
 ├── 03_vera_19.R                     # Convenience: 19-predictor VERA run only
 ├── 04_vera_19_36.R                  # Canonical: dual 19- and 36-predictor VERA
 ├── 05_render_core_outputs.R         # CORE renderer — spatial and per-variable diagnostics
-└── 06_render_addons.R               # ADD-ON renderer — agreement + tail-direction diagnostics
+├── 06_render_addons.R               # ADD-ON renderer — agreement + tail-direction diagnostics
+├── 07_vera_species_interpreter.R    # Evidence-bound post-analysis interpretation
+├── 08_render_mahalanobis_tiers.R    # OPTIONAL Mahalanobis calibration figures
+├── 09_render_response_curve_panels.R # OPTIONAL Top-6 response panels
+└── 10_render_top10_response_summaries.R # OPTIONAL Top-10 density + ridge galleries
 ```
 
 The scripts are numbered to reflect execution order. `04_vera_19_36.R` is the canonical implementation; `03_vera_19.R` is a convenience version for users who only need the classical 19 bioclimatic predictors. Both write outputs into `C:/VERA/Results/{19,36}/Skr_current/` using the exact same directory structure, so downstream renderers work identically on either result.
 
-The renderer scripts (`05`, `06`) consume completed VERA outputs and do not modify any core diagnostic. They can be re-run at any time without recomputing the analysis.
+The core renderer scripts (`05`, `06`) consume completed VERA outputs and do not modify any core diagnostic. Script `07` adds evidence-bound interpretation products. Scripts `08`–`10` are optional publication renderers. None of these post-analysis scripts changes the canonical VERA calculations.
 
 ---
 
@@ -176,6 +180,8 @@ C:/VERA/Results/36/Images/{core_renderer_plum, addon_renderer_plum}/
 ```
 
 Missing result trees are skipped silently — running the renderers on a 19-only setup produces only the 19-profile images.
+
+After rendering, `07_vera_species_interpreter.R` can generate species briefs, alerts, predictor evidence tables, interpretation-status rasters, occurrence-review queues and narrative evidence logs. Scripts `08`–`10` provide optional Mahalanobis calibration, response-curve and Top-10 summary graphics when required by the research question or journal.
 
 ---
 
