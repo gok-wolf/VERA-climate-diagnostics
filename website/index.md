@@ -22,6 +22,15 @@ The primary diagnostic layer is formed by directionally scaled **Variable Restri
 [Open the illustrated *Sitta krueperi* tutorial](tutorial.md){.btn .btn-primary .btn-lg}
 :::
 
+## Visual reading guides
+
+The first guide summarises the diagnostic architecture; the second organises
+the outputs around five questions used to read an individual VERA pixel.
+
+[![VERA diagnostic architecture and bounded interpretation workflow.](figures/vera-method-reading-workflow.png){fig-alt="Complete VERA diagnostic architecture from occurrence-derived calibration to bounded interpretation" width="100%"}](tutorial.md)
+
+[![Five-question guide for reading a VERA pixel.](figures/vera-pixel-reading-guide.png){fig-alt="Five interpretive questions and the VERA diagnostic outputs that answer them" width="100%"}](tutorial.md)
+
 ## Tutorial case study
 
 This site demonstrates the workflow using *Sitta krueperi* (Kr√ºper's nuthatch) under independent **19-predictor** and **36-predictor** profiles.
@@ -59,3 +68,11 @@ The dedicated Mahalanobis tier-calibration figure is optional. The Mahalanobis‚Ä
 3. Use the [minimum reporting guide](tutorial.md#minimum-reporting-set) to select essential manuscript maps.
 4. Consult the [output guide](outputs.md).
 5. Review the [reproducibility requirements](reproducibility.md).
+
+## Contact
+
+Questions and scientific correspondence:
+[botanical24@gmail.com](mailto:botanical24@gmail.com)
+
+Reproducibility reports may also be submitted through the GitHub issue
+tracker.

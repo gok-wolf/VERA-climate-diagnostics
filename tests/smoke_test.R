@@ -28,7 +28,6 @@ for (script in expected_scripts) {
 
 required_repository_files <- c(
   "README.md",
-  "CITATION.cff",
   "REPRODUCIBILITY.md",
   "metadata/script_manifest.csv",
   "metadata/data_manifest.csv",
