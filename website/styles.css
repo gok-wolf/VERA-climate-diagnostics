@@ -1,0 +1,39 @@
+html {
+  font-size: 18px;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #17202a;
+  line-height: 1.65;
+}
+
+h1, h2, h3, h4, h5, h6,
+.title, .subtitle {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #0f1720;
+  font-weight: 700;
+}
+
+.navbar, .nav-link, #TOC {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #17202a;
+  font-weight: 600;
+}
+
+.figure-caption, figcaption {
+  font-family: Arial, Helvetica, sans-serif;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+code, pre {
+  font-family: "Courier New", monospace;
+}
+
+@media (max-width: 768px) {
+  html {
+    font-size: 16.5px;
+  }
+}
