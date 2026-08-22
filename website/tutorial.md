@@ -1,47 +1,35 @@
-# VERA — A Complete Tutorial Using Krüper's Nuthatch
+---
+title: "VERA: An Illustrated Tutorial"
+subtitle: "A complete worked example using Krüper's nuthatch"
+description: "Occurrence preparation, asymmetric calibration, spatial diagnostics and interpretation of eight VERA figures."
+image: figures/Figure_1.png
+toc: true
+toc-depth: 3
+page-layout: full
+title-block-banner: true
+lightbox: true
+---
 
-**Variable Ecological Restriction Analysis (VERA)** is an asymmetric climatic-niche diagnostic framework. Unlike traditional species distribution models (SDMs), VERA does not attempt to predict *where a species is likely to occur*. It attempts to answer a different, sharper question: **for every pixel of the landscape, why is the environment restrictive — which specific variable is limiting the species, from which direction (too high or too low), and how does that restriction interact with the covariance-aware multivariate niche geometry?**
+**Variable Ecological Restriction Analysis (VERA)** is an asymmetric climatic diagnostic framework. Species distribution models have greatly advanced the description and projection of species–environment relationships. VERA addresses a complementary question: **how strongly does each pixel depart from a species' occupied climatic reference, which predictor carries the leading signal, is that lead unique or shared, and does the departure arise above or below the reference?**
 
-This repository contains the full public tutorial pipeline: from raw climate rasters through cleaned occurrences, through the VERA core computation, all the way to publication-grade diagnostic figures. Every script here is the exact code used to produce the figures shown below.
+This repository contains the public tutorial pipeline: from climate rasters and occurrence preparation through the VERA core computation and publication-grade diagnostic figures. The traceability table below identifies the scripts and output families used for each figure.
+
+> **Interpretive boundary.** VERA maps climatic departure from an occupied reference. It does not estimate occurrence probability, habitat suitability, physiological tolerance, demographic performance or causal range limitation.
 
 The focal taxon throughout is *Sitta krueperi* (Krüper's Nuthatch), an eastern-Mediterranean forest species with a distribution largely restricted to Türkiye.
 
 ---
 
-## Table of Contents
-
-- [Before Any Code Runs: Why Clean Occurrences Matter More in VERA Than in Any Other Framework](#before-any-code-runs)
-- [Repository Layout](#repository-layout)
-- [Stage 1 — Building the Predictor Stack (ENVIREM)](#stage-1)
-- [Stage 2 — The Three-Step Occurrence Cascade](#stage-2)
-- [Stage 3 — Running the VERA Core Pipeline](#stage-3)
-- [Stage 4 — Rendering the Diagnostic Figures](#stage-4)
-- [Reading the Outputs — Guided Figure Tour](#reading-the-outputs)
-  - [Figure 1 — The VERA Conceptual Framework](#figure-1)
-  - [Figure 2 — Per-Variable Niches in Native Units](#figure-2)
-  - [Figure 3 — Aligned-Optimum Cross-Variable Comparison](#figure-3)
-  - [Figure 4 — Core Spatial Outputs](#figure-4)
-  - [Figure 5 — Mahalanobis Distance and Empirical Climatic Tiers](#figure-5)
-  - [Figure 6 — Categorical Stressor Attribution](#figure-6)
-  - [Figure 7 — Add-On Branch A: Metric-Agreement Diagnostic](#figure-7)
-  - [Figure 8 — Add-On Branch B: Directional Attribution](#figure-8)
-- [Which Script Produced Which Figure](#which-script-produced-which-figure)
-- [Reproducibility](#reproducibility)
-
----
-
 <a id="before-any-code-runs"></a>
-## Before Any Code Runs: Why Clean Occurrences Matter More in VERA Than in Any Other Framework
+## Before Any Code Runs: Why Occurrence Quality Matters
 
-If you take one thing away from this tutorial, take this: **VERA is unusually sensitive to occurrence quality, and understanding why is essential before running any of the code that follows.**
+If you take one thing away from this tutorial, take this: **VERA's reference statistics are estimated directly from the retained occurrences, so occurrence quality must be evaluated before running the analysis.**
 
-Most SDMs consume occurrences primarily as *presence signals* fed into a discriminative learner (MaxEnt, random forest, GLM, etc.). A handful of miscoded points, spatially-biased duplicates, or lonely geographic outliers usually add noise but rarely rewrite the model's conclusions — the learner regularises them away.
+Occurrence errors and sampling bias matter in all distributional analyses. In VERA, their influence is especially transparent because every downstream output is built on three predictor-specific reference statistics estimated directly from the occurrence values:
 
-VERA works differently. Every downstream output — every diagnostic map, every tier boundary, every stressor attribution — is built on top of three per-variable **anchor statistics** derived directly from your occurrence values:
-
-- **μ** (mu) — the occurrence-derived climatic optimum
-- **σ_L** — the lower-tail scale (asymmetric distance to below-optimum values)
-- **σ_U** — the upper-tail scale (asymmetric distance to above-optimum values)
+- **μ** (mu) — the occurrence-derived reference centre
+- **σ_L** — the lower-tail occupied climatic breadth
+- **σ_U** — the upper-tail occupied climatic breadth
 
 There is no discriminative learner between your points and these numbers. A wildly wrong occurrence:
 
@@ -51,11 +39,11 @@ There is no discriminative learner between your points and these numbers. A wild
 - distorts the covariance matrix used for Mahalanobis calibration,
 - and shifts the empirical 80 / 95 / 99 % percentile thresholds that define the four climatic tiers.
 
-There is also a subtler failure mode. If your occurrence set is spatially oversampled — many points clustered near cities, roads, or protected areas — **μ** silently shifts toward the environmental conditions of the *sampling effort* rather than the *actual centroid of use*, and the tail scales artificially tighten. The maps that come out of VERA will then look ecologically confident when they are really just tracking observer behaviour.
+There is also a subtler failure mode. If the occurrence set is spatially oversampled near cities, roads or protected areas, **μ** and the tail breadths may partly reflect observation effort rather than the intended distribution of occupied climatic conditions.
 
-For these reasons, this tutorial dedicates an entire preprocessing stage — a three-step cascade — to producing a defensible occurrence table before VERA is ever invoked. The stages are not optional and they are not interchangeable; each one catches a different failure mode.
+For these reasons, the tutorial documents a three-step preprocessing cascade before VERA is invoked. These are explicit choices for this worked example; other datasets may require additional or alternative taxonomic, spatial and sampling-bias controls.
 
-> **The rule:** VERA is only as trustworthy as the occurrence table you feed it. Preprocessing is not a cosmetic step. It is the foundation on which every downstream figure is standing.
+> **The rule:** preprocessing decisions define the empirical occupied reference and must therefore be justified, recorded and sensitivity-checked.
 
 ---
 
@@ -97,7 +85,7 @@ This first script builds the 17 ENVIREM rasters from monthly climate inputs (`pr
 
 **Script:** `02_occurrence_preparation.R`
 
-This is where the "clean occurrences" principle from the preface is operationalised. The script implements three independent cleaning stages, in this exact order. Each stage catches a distinct failure mode. Skipping any stage leaves that failure mode intact in the downstream anchor statistics.
+This script operationalises the occurrence-preparation choices used in the tutorial. The three stages are applied in the documented order so that their effects on record retention remain auditable.
 
 ### Stage 2.1 — Domain cleaning
 
@@ -109,19 +97,19 @@ Points are converted to a `SpatVector`, projected to the predictor stack's CRS, 
 
 For each retained occurrence, the raster cell number is computed via `cellFromXY`. Records that share a cell are deduplicated so that at most **one occurrence per raster cell** survives.
 
-**What this catches — and why it is critical for VERA specifically.** Pixel-level thinning removes the *sampling-effort bias* that quietly distorts anchor statistics. If a single 2.5-arc-minute cell contains twelve overlapping records — three from an eBird hotspot, four from a museum accession, five from a protected-area survey — the anchor μ will be pulled twelve times toward that cell's climate. The tail scales σ_L, σ_U will tighten around it. The species will appear artificially specialised in whatever climate that one cell happens to have. Pixel thinning enforces "one climate condition, one vote": μ represents the environmental centroid of *use*, not the centroid of *observation effort*.
+**What this catches — and why it matters for VERA.** Pixel-level thinning reduces the influence of uneven sampling effort on the reference statistics. If a single 2.5-arc-minute cell contains twelve overlapping records, its climate would otherwise receive twelve times the weight of a cell represented by one record. Pixel thinning therefore enforces "one raster cell, one vote" at the analysis resolution.
 
-Unlike distance-based spatial thinning (which forces a minimum separation between points), pixel-level thinning is exactly matched to the raster resolution being modelled — the finest granularity at which VERA can distinguish environmental conditions. It is the correct thinning granularity when the predictor pixel size is already the effective unit of analysis.
+Unlike distance-based spatial thinning, pixel-level thinning is matched to the raster resolution being analysed. It is one defensible choice when the raster cell is the intended unit of environmental duplication, although residual sampling bias may still require additional treatment.
 
 ### Stage 2.3 — Geographic outlier isolation (retain 97 %)
 
 The thinned points are projected to a metric CRS (EPSG:3857), a geographic Mahalanobis distance is computed from the point cloud's spatial centroid and covariance, and the top 3 % most-distant points are removed. The remaining 97 % becomes the final occurrence table used by VERA.
 
-**What this catches.** Coordinate errors that survived domain cleaning (a point plotting into Türkiye's ecological envelope but genuinely misidentified), specimens with imprecise georeferences that landed far outside the species' actual range, and long-distance vagrants that do not represent stable ecological use. VERA's anchor computation is unbiased against typical range-edge variation but *is* sensitive to extreme geographic outliers because they usually come attached to extreme climatic outliers.
+**What this screens.** The rule isolates the most geographically distant records for exclusion under the tutorial protocol. Such records may include coordinate errors, imprecise georeferences or genuine peripheral observations; distance alone cannot distinguish among these possibilities. Source-level review should be used whenever record provenance is available.
 
-Why 3 %? It is a deliberately gentle threshold — aggressive enough to remove obvious geographic misfits, conservative enough to preserve legitimate peripheral populations at the range's true climatic and geographic edge. The peripheral populations you *want* to keep (climatic marginal but geographically plausible) will be caught downstream by VERA's own core / peripheral partition (see [Figure 4](#figure-4)) using the covariance-aware climatic Mahalanobis distance, which is the right tool for that job. Stage 2.3 handles only the geographic pathology.
+Why 3 %? In this tutorial it is an explicitly documented screening rule for the most geographically isolated records. It is not a universal VERA default and should not replace taxonomic, coordinate or source-level validation. The later climatic core/peripheral partition (see [Figure 4](#figure-4)) answers a different question because it is based on environmental rather than geographic distance.
 
-> **The full cascade.** A raw table of ~4,000 records typically drops to ~2,800 after domain cleaning, to ~1,100 after pixel thinning, and to ~1,067 after the 3 % geographic isolation. This is not data loss — it is data hygiene. Every one of those removed records was a threat to at least one of your downstream anchor statistics.
+> **The full cascade.** The tutorial records the number of observations retained at every step. These counts are dataset-specific and should be reported as an audit trail, not treated as expected retention targets for other taxa.
 
 The final table lands at `C:/VERA/Occurrences/Edited/Sitta_krueperi.csv` and is the *only* occurrence input consumed by the VERA scripts that follow.
 
@@ -176,30 +164,30 @@ Missing result trees are skipped silently — running the renderers on a 19-only
 <a id="reading-the-outputs"></a>
 ## Reading the Outputs — Guided Figure Tour
 
-The eight figures below are arranged in the order that most efficiently teaches VERA. Figure 1 introduces the framework's asymmetric geometry conceptually; Figures 2–3 show that geometry realised across the top-10 stressors; Figures 4–5 move into space, showing where and how much the landscape restricts the species; Figures 6–8 attribute those restrictions to specific predictors, specific directions, and cross-check them against a covariance-aware baseline.
+The eight figures below move from calibration to spatial interpretation. Figure 1 introduces the asymmetric geometry; Figures 2–3 compare predictor-level patterns; Figures 4–5 map continuous departure and covariance-aware context; Figures 6–8 resolve attribution, direction and cross-geometry agreement.
 
 ---
 
 <a id="figure-1"></a>
 ### Figure 1 — The VERA Conceptual Framework
 
-![Figure 1](Figure_1.png)
+![Figure 1. Conceptual illustration of asymmetric occupied climatic breadth and the resulting variable restriction score.](figures/Figure_1.png){fig-alt="Conceptual VERA figure showing occupied and background climatic distributions and an asymmetric restriction curve."}
 
 This two-panel figure is the conceptual foundation for everything else. Both panels use a single predictor — **PET of the Wettest Quarter (PETWeQ)** — to make the asymmetric restriction geometry visible in native units.
 
 **Panel (a) — The observable niche.** The blue density is the species' realised distribution along PETWeQ (the *Occupied Niche*). The yellow density is the region-wide availability of PETWeQ values (the *Available Climate Space*). The narrow blue peak sits on the low end of the gradient; the yellow density has a broad secondary peak far to the right where PETWeQ values reach 250–350 mm/month.
 
-That right-hand yellow peak is the *Unoccupied Potential*: climate conditions that physically exist across Türkiye but are *not* used by Sitta krueperi. Because the species had physical access to those conditions and still declined to occupy them, the restriction must be intrinsic — physiological or ecological — rather than a lack of available space.
+That right-hand yellow peak represents climatic conditions available within the supplied background domain but weakly represented among the retained occurrences. This contrast generates a directional restriction hypothesis. It does not by itself demonstrate accessibility, physiological exclusion or the causal process responsible for the spatial pattern.
 
-The two shaded zones anchor the asymmetric tolerance interpretation. The **red Constrained Tolerance Zone** on the left of the optimum (spanning μ − σ_L to μ) marks the narrow buffer within which the species can tolerate downward departures. The **green Extended Tolerance Zone** on the right (μ to μ + σ_U) marks the far wider buffer within which it tolerates upward departures.
+The two shaded zones visualise the asymmetric occupied breadths. The **red lower-tail zone** spans μ − σ_L to μ, and the **green upper-tail zone** spans μ to μ + σ_U. These occurrence-derived intervals describe the calibration data; they are not experimental tolerance limits.
 
 **Panel (b) — The restriction gradient.** Panel (b) transforms Panel (a) into the machinery VERA actually computes. The x-axis is the same (PETWeQ in mm/month) but the y-axis is now the per-pixel **Z²** value — the squared, asymmetric, capped restriction score contributed by this variable alone.
 
-The curve is deliberately not symmetric. On the left side of μ, Z² rises steeply as PETWeQ decreases — a downward departure of a few tens of mm/month drives Z² toward the cap almost immediately. This is **rapid stress accumulation**, the mathematical face of low lower-tail tolerance. On the right side, Z² rises far more gently — the species tolerates an increase of hundreds of mm/month before Z² approaches the cap. This is the **high ecological buffer** on the upper tail.
+The curve is deliberately asymmetric. On the left side of μ, Z² rises steeply as PETWeQ decreases because the estimated lower-tail occupied breadth is narrow. On the right side, Z² rises more gradually because the upper-tail breadth is wider. This is directional scaling of climatic departure, not a fitted performance response.
 
-The two horizontal reference lines — **Z² = 4** (moderate) and the **Z² = 16 cap** — are VERA's fixed thresholds. Any predictor whose Z² reaches 16 at a pixel is contributing the maximum possible restriction score and is called **saturated** for that pixel.
+The **Z² = 16 cap** is the canonical ceiling used in this tutorial to prevent extrapolative values from dominating multivariate summaries. The **Z² = 4** line is a visual reference in this educational figure, not an independently calibrated ecological threshold.
 
-**The reported asymmetry metrics** (μ = 112.33, σ_L = 32.13, σ_U = 103.48) give an asymmetry ratio of **3.31** with a 95 % bootstrap CI of 3.08–3.55 and the *bootstrap-stable* flag = Yes. That flag matters: it certifies that the extreme asymmetry is not a small-sample artefact but a robust, reproducible feature of the species' response.
+**The reported asymmetry metrics** (μ = 112.33, σ_L = 32.13, σ_U = 103.48) give an asymmetry ratio of **3.31** with a 95 % bootstrap CI of 3.08–3.55 and the *bootstrap-stable* flag = Yes. This indicates that the estimated directional breadth contrast was stable under the specified occurrence-resampling procedure; it is not evidence of a physiological response curve.
 
 > **What Figure 1 teaches you.** Every subsequent figure in this tutorial is built out of this asymmetric geometry, one predictor at a time, then summed, projected across the landscape, and cross-attributed. Understand Panel (a) and Panel (b), and every downstream figure becomes readable.
 
@@ -208,75 +196,75 @@ The two horizontal reference lines — **Z² = 4** (moderate) and the **Z² = 16
 <a id="figure-2"></a>
 ### Figure 2 — Per-Variable Niches in Native Units
 
-![Figure 2](Figure_2.png)
+![Figure 2. Occupied and background climatic distributions for the ten leading predictor-level attribution classes, shown in native units.](figures/Figure_2.png){fig-alt="Ten predictor panels comparing occupied and background climatic distributions in native units."}
 
-Figure 2 replicates Panel (a) of Figure 1 for the **top 10 primary stressors** — the ten predictors that most frequently rank as the single most restrictive variable across Türkiye. Each panel keeps the variable's *native units* on the x-axis (mm, °C, mm/month, index units), so the ecological thresholds are directly readable.
+Figure 2 replicates Panel (a) of Figure 1 for the **ten most frequent Primary Stressor classes** in the mapped domain. Each panel keeps the predictor's native units on the x-axis, so the occurrence-derived reference and breadths can be read in their original measurement scales.
 
 For every panel:
 
 - **Blue** density = species' occupied climate (occurrences),
-- **Yellow** density = available climate space (background),
+- **Yellow** density = climatic distribution in the supplied background domain,
 - **Red-shaded band** = μ − σ_L to μ (Constrained Tolerance Zone),
 - **Green-shaded band** = μ to μ + σ_U (Extended Tolerance Zone),
-- **Red vertical line** = climatic optimum μ.
+- **Red vertical line** = occurrence-derived reference centre μ.
 
-Reading this figure means asking the same three questions of each panel. **First**, does the blue occupation match, avoid, or partially overlap the yellow availability? If the yellow extends far beyond the blue, the species is being *restricted* rather than *limited by opportunity*. **Second**, is the red band narrow and the green band wide (or vice versa)? Ratio and direction of asymmetry differ meaningfully across predictors. **Third**, does the blue density terminate sharply at one edge (a physiological wall) or taper smoothly (a gradient of decreasing suitability)?
+Reading this figure means asking the same three questions of each panel. **First**, does the occupied distribution match, only partly overlap or occupy a narrow subset of the supplied background? **Second**, is the lower occupied breadth narrower than the upper breadth, or vice versa? **Third**, does the occurrence density end sharply or taper gradually near either edge? These are descriptive patterns that can motivate physiological, demographic or biotic hypotheses for independent testing.
 
-Sitta krueperi shows several distinct patterns across the ten panels — sharp lower-edge specialisation on some predictors (Bio14, PETWeQ), broadly overlapping occupation with modest asymmetry on others (Bio3, Bio7), and a striking case where the blue occupation is pressed *against the upper edge* of the available range (AIT, Aridity Index), suggesting the species uses the aridity-tolerant end of what Türkiye's climate offers.
+The panels reveal several descriptive patterns: relatively narrow lower occupied breadths for some predictors, broader overlap between occurrences and background for others, and cases in which the occurrence density approaches an edge of the supplied background distribution. These contrasts help identify predictor-specific hypotheses for further study.
 
 ---
 
 <a id="figure-3"></a>
 ### Figure 3 — Aligned-Optimum Cross-Variable Comparison
 
-![Figure 3](Figure_3.png)
+![Figure 3. Aligned-reference comparison of occupied and background distributions across predictors.](figures/Figure_3.png){fig-alt="Standardised ridge distributions aligned at the occurrence-derived reference centre for cross-predictor comparison."}
 
 Figure 2 shows each predictor in its own units, which is faithful but makes cross-variable comparison hard: a 30-mm departure in Bio14 and a 100-unit departure in PETs are not directly comparable. Figure 3 fixes this by standardising every predictor against its own asymmetric anchor:
 
-- Values below μ are rescaled by σ_L (so the lower-tolerance boundary always sits at z = −1),
-- Values above μ are rescaled by σ_U (so the upper-tolerance boundary always sits at z = +1),
-- The optimum itself always sits at z = 0.
+- Values below μ are rescaled by σ_L (so one lower-tail occupied breadth sits at z = −1),
+- Values above μ are rescaled by σ_U (so one upper-tail occupied breadth sits at z = +1),
+- The occurrence-derived reference centre always sits at z = 0.
 
 This is the *same* standardisation VERA uses internally to compute Z². The x-axis is therefore not an arbitrary rescaling — it is the exact restriction-score coordinate.
 
-With every μ aligned at zero, the **central red vertical line** is the shared optimum. The **red vertical band** [−1, 0] is the Constrained Tolerance Zone (identical across all variables in these standardised units). The **green vertical band** [0, +1] is the Extended Tolerance Zone.
+With every μ aligned at zero, the **central red vertical line** is the shared reference centre. The bands from −1 to 0 and from 0 to +1 represent one estimated lower- and upper-tail occupied breadth, respectively.
 
 Reading the ridges top-to-bottom, four ecological questions become answerable at a glance:
 
-1. **Is the blue occupation narrower or wider than the yellow availability?** Narrow blue relative to yellow = specialisation. Wide blue similar to yellow = generalist.
-2. **Where does the blue peak sit relative to the red optimum line?** Aligned with the line = optimum-centred use. Shifted left or right = tail-biased use even inside the species' tolerable range.
-3. **Does the blue extend into the red band, into the green band, or beyond ±1 entirely?** The further out, the more the species is enduring measurable restriction on that variable.
-4. **Does the yellow availability extend far beyond the blue occupation on one side?** That is the unoccupied potential from Figure 1, generalised across every variable.
+1. **Is the occupied distribution narrower or wider than the supplied background?** This describes environmental occupancy relative to the selected domain; it does not alone establish ecological specialisation.
+2. **Where does the occupied density peak relative to the reference line?** A shift indicates asymmetric occurrence density around the arithmetic mean.
+3. **How far do occupied and background values extend beyond ±1?** This shows their positions relative to the estimated tail-specific occupied breadths.
+4. **Does the background distribution extend far beyond the occupied distribution on one side?** This identifies directional contrast relative to the selected study domain.
 
-Together Figures 2 and 3 form a matched pair: Figure 2 preserves ecological realism (native units, direct interpretability), Figure 3 enables commensurable comparison (standardised units, cross-variable pattern-reading).
+Together Figures 2 and 3 form a matched pair: Figure 2 preserves native measurement units, while Figure 3 enables cross-predictor comparison in standardised directional units.
 
 ---
 
 <a id="figure-4"></a>
 ### Figure 4 — Core Spatial Outputs
 
-![Figure 4](Figure_4.png)
+![Figure 4. Occurrence partition and continuous VERA summaries across the tutorial domain.](figures/Figure_4.png){fig-alt="Maps of the occurrence partition, mean and maximum VRS, VPI and delta VRS."}
 
 Figure 4 is the first spatial output of the pipeline. It stacks five maps of Türkiye, each showing a different facet of the species' climatic geography.
 
-**Panel 1 — Occurrence-Level Climatic Partition.** Every occurrence in the cleaned table is classified as **Core** (light pink) or **Peripheral** (dark purple) based on its multivariate Mahalanobis distance to the occupied climatic centroid. Points inside the 0.90 quantile are Core; the remaining 10 % are Peripheral. The critical observation is that Core and Peripheral are *not* geographically segregated. Peripheral occurrences (highlighted inside the two rectangular insets) sit intermingled with Core occurrences over short distances — sometimes within the same mountain range. This is a direct empirical demonstration that in complex topography, climatic distance and geographic distance are decoupled: microclimatic variation across a slope or an elevation gradient can create peripheral climatic conditions right next to core ones.
+**Panel 1 — Occurrence-Level Climatic Partition.** Every retained occurrence is classified as **Core** (light pink) or **Peripheral** (dark purple) using its multivariate Mahalanobis distance and the 0.90 empirical quantile rule. The mapped proximity of some Core and Peripheral records shows that climatic position need not mirror geographic separation. In this topographically complex domain, that pattern is consistent with environmental heterogeneity over short distances, although the map alone does not identify its cause.
 
-**Panel 2 — Mean VRS.** The pixel-wise mean of the Z² restriction contributions across all predictors. Low (light) values mean the species faces low average restriction; high (dark) values mean compounded systemic stress. Mean VRS answers *how heavy is the total restriction load* at each pixel.
+**Panel 2 — Mean VRS.** The pixel-wise mean of the Z² values across predictors. Low values indicate smaller average climatic departure from the occupied reference; high values indicate larger cumulative departure. Mean VRS does not measure physiological stress or fitness.
 
-**Panel 3 — Maximum VRS.** For each pixel, the largest single-predictor Z² contribution. Where Max VRS is dark, at least one predictor is severely restricting the species even if the others are tolerable. Max VRS answers *does this pixel contain a hard bottleneck?* Compared to Mean VRS, Max VRS is more sensitive to Liebig-style single-variable limitation.
+**Panel 3 — Maximum VRS.** For each pixel, this is the largest predictor-specific Z² value. It identifies the strongest single-axis departure signal even when the remaining predictors are closer to their occupied references. Compared with Mean VRS, it emphasises a Liebig-inspired candidate bottleneck rather than cumulative departure.
 
-**Panel 4 — VPI (Variable Proximity Index).** Defined as VPI = 1 / (1 + mean VRS). Ranges from 0 (impassable) to 1 (climatic proximity to the occupied optimum). Note that VPI's visual polarity is the *inverse* of the VRS maps: **light areas here are the best habitat, not the worst.** VPI collapses the whole VERA restriction stack into a single suitability-like number and is useful when a downstream analysis needs a scalar habitat-quality proxy.
+**Panel 4 — VPI (Variable Proximity Index).** Defined as VPI = 1 / (1 + mean VRS), this bounded inverse increases as mean VRS decreases. Values nearer 1 indicate greater climatic proximity to the occupied reference; values nearer 0 indicate greater average departure. VPI is not a habitat-suitability, occurrence-probability or habitat-quality index.
 
-**Panel 5 — Δ VRS (Delta VRS).** This is a *diagnostic* map, not a suitability map, and it is the one panel where the light-vs-dark rule inverts its meaning. Δ VRS is the gap between the primary and secondary stressor at each pixel. Dark pixels are where a **single variable dominates** — one predictor is much more restrictive than any other. Light pixels are where **two or more predictors are near-equally restrictive** (small Δ VRS). This distinction matters for management: a dark-Δ pixel can potentially be relieved by addressing the one dominant stressor, while a light-Δ pixel presents multiple co-limiting factors simultaneously.
+**Panel 5 — Δ VRS (Delta VRS).** This is a separation diagnostic: the difference between the largest and second-largest predictor-specific scores. Large values indicate a clearly separated leading score; small values indicate weak separation or a tie. It does not establish that manipulating the leading variable would alter occurrence or performance.
 
-> **Reading rule for Panels 2–4.** *Light = good, dark = bad.* Panel 5 (Δ VRS) is diagnostic and must be read separately — it describes the *shape* of the restriction, not its intensity.
+> **Reading rule.** Interpret each legend directly. Mean VRS, maximum VRS and VPI describe climatic departure or proximity, whereas Δ VRS describes separation between the two leading predictor scores. None is a map of habitat quality.
 
 ---
 
 <a id="figure-5"></a>
 ### Figure 5 — Mahalanobis Distance and Empirical Climatic Tiers
 
-![Figure 5](Figure_5.png)
+![Figure 5. Covariance-aware Mahalanobis distance and empirical climatic-tier calibration.](figures/Figure_5.png){fig-alt="Mahalanobis distance map, empirical cumulative distribution, climatic tiers and occurrence-level distance densities."}
 
 Figure 5 shows VERA's covariance-aware multivariate calibration. Where Figure 4 summarises restriction one variable at a time and then averages, Figure 5 treats all predictors *simultaneously* under their joint covariance structure.
 
@@ -286,54 +274,53 @@ Figure 5 shows VERA's covariance-aware multivariate calibration. Where Figure 4 
 
 **Panel (c) — Empirical Climatic Tiers.** The thresholds from Panel (b) are applied to Panel (a), collapsing the continuous distance surface into four categorical zones:
 
-- **Core climate** (lightest) — the multivariate niche core; the species' typical conditions.
-- **Moderate departure** — tolerable but distinguishable from the core.
-- **Restriction zone** — significant multivariate departure; local persistence is possible but marginal.
-- **High extrapolative stress** (darkest) — the environment lies beyond the multivariate envelope the species is known to occupy; predictions here are extrapolative.
+- **Core climate** (lightest) — conditions within the first empirical distance band.
+- **Moderate departure** — the next empirical distance band beyond the core.
+- **Restriction zone** — larger covariance-aware departure from the reference.
+- **High extrapolative stress** (darkest) — the most distant empirical tier in this diagnostic classification.
 
-Because the thresholds come from the core occurrence distribution itself, the tier map is directly comparable across species that were run through the same pipeline.
+Because the thresholds come from each taxon's core occurrence distribution, tier labels have a consistent percentile-based interpretation when taxa use the same settings. Absolute distances and mapped areas remain taxon- and predictor-profile-specific.
 
-**Panel (d) — Occurrence-level Mahalanobis density.** The complement to Panel 1 of Figure 4. Every cleaned occurrence is scored by its Mahalanobis distance to the core centroid, and the density is split by partition. **Core Occupied** occurrences (light pink) cluster at low distances with a clean unimodal peak. **Peripheral** occurrences (dark purple) peak *past* the dashed threshold and carry a long right tail — proof that the peripheral partition is genuinely a climatically distinct subset of the observed range, not a random-noise artefact.
+**Panel (d) — Occurrence-level Mahalanobis density.** Every retained occurrence is scored by its Mahalanobis distance, and the density is displayed by the rule-based partition. The expected separation is a visual audit of how the empirical threshold divided the observations; it is not an independent validation of the partition.
 
-> **What Figure 5 adds beyond Figure 4.** VRS is variable-additive and asymmetry-sensitive. Mahalanobis is covariance-aware and asymmetry-blind. The two are *complementary*, not redundant. Areas where the two agree (see [Figure 7](#figure-7)) are the most robust conclusions; areas where they disagree reveal where VERA's asymmetric geometry adds information over a traditional multivariate baseline.
+> **What Figure 5 adds beyond Figure 4.** VRS is predictor-wise and directionally scaled; Mahalanobis distance is covariance-aware and directionally symmetric around its centre. Agreement indicates convergence between the two diagnostic geometries, while disagreement localises where their mathematical assumptions produce different rankings.
 
 ---
 
 <a id="figure-6"></a>
 ### Figure 6 — Categorical Stressor Attribution
 
-![Figure 6](Figure_6.png)
+![Figure 6. Tie-aware categorical attribution of leading, secondary, high-side and low-side climatic-departure signals.](figures/Figure_6.png){fig-alt="Six maps showing primary, secondary, unique or co-dominant, TooHigh and TooLow stressor attribution."}
 
-Figures 4 and 5 tell you *how restricted* each pixel is. Figure 6 tells you *which variable is doing the restricting* at each pixel — the categorical, attribution face of VERA. Colours here do not encode stress intensity; each colour is a specific predictor. The legend at the bottom pairs each colour with a variable and its percentage share of the landscape.
+Figures 4 and 5 describe the magnitude of climatic departure and its covariance-aware context. Figure 6 reports the predictor identities associated with the leading and directional scores. Colours encode predictor classes rather than score intensity.
 
 Six panels cover complementary attribution questions.
 
-**Panel (a) — Primary Stressor.** For each pixel, the single variable with the largest Z² contribution. Following Liebig's Law of the Minimum, this is the single limiting factor at that pixel. Bio4 (Temperature Seasonality) dominates the eastern half of Türkiye with 29.2 % landscape share — that region's most restrictive climatic feature for Sitta krueperi is its temperature seasonality.
+**Panel (a) — Primary Stressor.** For each pixel, this layer reports the predictor assigned to the largest Z² value after deterministic tie breaking. It is the leading climatic-departure signal, not a demonstrated causal limiting factor.
 
-**Panel (b) — Secondary Stressor.** For each pixel, the variable with the *second-largest* Z². If the primary stressor were somehow relieved, this variable would step forward as the next-binding constraint. CNT (Continentality) is the leading secondary stressor at 19.1 %, appearing in dark green wherever Bio4 is primary — signalling a coupled seasonality/continentality bottleneck in Türkiye's interior.
+**Panel (b) — Secondary Stressor.** For each pixel, this is the predictor associated with the second-largest Z² value. It describes the local hierarchy of scores without implying the outcome of manipulating either predictor.
 
 **Panel (c) — Alternate Primary View.** A companion primary-stressor view emphasising a different colour palette; the interpretation is identical to Panel (a).
 
-**Panel (d) — Primary Stressor Uniqueness.** A diagnostic map with only two categories.
-- **Light pixels** — a *unique* single predictor clearly dominates.
-- **Dark plum pixels** — multiple predictors are *tied at the Z² = 16 cap*. In these regions the environment is simultaneously intolerable along several dimensions — a compound failure state, not a single-variable bottleneck.
+**Panel (d) — Primary Stressor Uniqueness.** A diagnostic map with two categories.
 
-This distinction matters. A dark-plum pixel cannot be "rescued" by relieving one variable, because several are already saturated at the cap.
+- **Light pixels** — one predictor has a strict single maximum. The size of its lead should still be checked with Δ VRS.
+- **Dark plum pixels** — two or more predictors share the maximum score. Cap saturation is a common source of such ties but should be verified with the cap-engagement diagnostics.
 
 **Panel (e) — TooHigh Stressor.** Attributes the primary restriction *only where the variable exceeds μ*. Answers: "where is the environment *too much* for the species — too warm, too wet, too seasonal?"
 
 **Panel (f) — TooLow Stressor.** Attributes the primary restriction *only where the variable falls below μ*. Answers: "where is the environment *insufficient* — too cool, too dry, too aseasonal?"
 
-Comparing Panels (e) and (f) directly localises the *direction* of primary restriction in space — a piece of information no traditional SDM output provides.
+Comparing Panels (e) and (f) localises the direction of the leading predictor-wise departure relative to the occupied reference.
 
-> **What Figure 6 does that other frameworks cannot.** A traditional SDM tells you a pixel is unsuitable. VERA tells you *which variable* made it unsuitable, whether that variable is *too high or too low*, and whether the pixel is a *single-variable bottleneck* or a *multi-variable collapse*. That is a substantive shift from prediction to diagnosis.
+> **What Figure 6 adds.** VERA reports which predictor carries the leading score, whether that maximum is strict or shared, and whether the contributing value lies above or below the occupied reference. These are diagnostic attributions, not explanations of suitability or causation.
 
 ---
 
 <a id="figure-7"></a>
 ### Figure 7 — Add-On Branch A: Metric-Agreement Diagnostic
 
-![Figure 7](Figure_7.png)
+![Figure 7. Percentile-rank comparison between VRS and Mahalanobis diagnostic geometries.](figures/Figure_7.png){fig-alt="Maps of VRS and Mahalanobis ranks, signed and absolute disagreement, and four agreement classes."}
 
 The two add-on branches step back from the primary diagnostic and cross-check VERA's outputs against each other and against alternative interpretations. **Branch A** compares VERA's asymmetric restriction signal (VRS) against the covariance-aware multivariate baseline (Mahalanobis).
 
@@ -344,44 +331,44 @@ The five panels form a strict derivation pipeline — each panel is derived from
 3. **Percentile Rank Divergence (VRS minus Mahalanobis)** — the signed difference. Purple / magenta pixels are places where VRS ranks the pixel more restrictive than Mahalanobis does; blue pixels are the reverse. Signs matter here — this map answers *which model calls this pixel worse*.
 4. **Absolute Rank Disagreement** — the same difference stripped of sign. Answers *how far apart the two models are*, regardless of which is higher.
 5. **Mahalanobis–VRS Agreement Classes (bottom panel)** — the categorical synthesis, with a proper legend.
-   - **VRS-dominant** (magenta) — pixels where VRS calls the pixel much more restrictive than Mahalanobis. These are the places where VERA's asymmetric geometry sees a bottleneck the traditional covariance-aware distance misses. Ecologically, these are pixels where a *single* variable is far outside the species' tolerance on the harsh tail, even though the pixel is not particularly unusual in multivariate space.
-   - **Mahalanobis-dominant** (blue) — the reverse. Mahalanobis flags the pixel as far from the multivariate niche core, but no single predictor is severely asymmetric-restrictive. These are pixels with an unusual *combination* of otherwise-tolerable conditions.
+   - **VRS-dominant** (magenta) — pixels where the VRS percentile rank exceeds the Mahalanobis rank by more than the configured divergence threshold. Directional predictor-wise scaling has greater influence here.
+   - **Mahalanobis-dominant** (blue) — pixels where the Mahalanobis percentile rank exceeds the VRS rank by more than the threshold. Covariance-aware multivariate geometry has greater influence here.
    - **Concordant higher-rank** (purple) — both metrics agree the pixel is highly restrictive.
    - **Concordant lower-rank** (grey) — both metrics agree the pixel is close to the niche core.
 
-The concordant classes together form the *robust conclusions*: the two independent geometries agree, so the assessment is unlikely to be an artefact of either. The dominant classes together form the *diagnostic surface*: they show precisely where the choice between asymmetric-univariate and symmetric-multivariate reasoning changes the answer.
+The concordant classes identify pixels where the two geometries give similar relative rankings. The dominant classes identify where the choice of directional predictor-wise versus covariance-aware geometry materially changes the ranking. Because both branches use the same occurrences and predictors, agreement should not be described as independent validation.
 
 ---
 
 <a id="figure-8"></a>
 ### Figure 8 — Add-On Branch B: Directional Attribution
 
-![Figure 8](Figure_8.png)
+![Figure 8. Dominant and net tail-direction diagnostics.](figures/Figure_8.png){fig-alt="Two maps comparing the direction of the strongest single-tail signal with the direction of cumulative tail pressure."}
 
 **Branch B** is independent from Branch A. It asks a different question: *when the environment is restrictive, is that restriction coming from the upper tail (values above μ) or the lower tail (values below μ)?*
 
 Two panels show two ways of aggregating the answer.
 
-**Panel (a) — Dominant Tail Direction.** For each pixel, examines the *single largest* stressor contribution and asks which side of μ it sits on. Follows Liebig's-Law logic: the direction of the single most severe stressor wins.
+**Panel (a) — Dominant Tail Direction.** For each pixel, this panel compares the strongest upper-tail and lower-tail predictor scores and reports the larger directional signal.
 
 **Panel (b) — Net Tail Direction.** For each pixel, sums all upper-tail Z² contributions and all lower-tail Z² contributions across every predictor, then reports which side has the larger cumulative sum. This is a macro-attribution view — the direction of overall restrictive pressure across the whole predictor stack.
 
 Three classes appear on both maps:
 
-- **Upper-tail dominant** (red) — restriction is driven by *exceeding* the species' optima. In this region, the environment is too warm, too wet, too seasonal, too continental — depending on which variable dominates locally.
-- **Lower-tail dominant** (yellow) — restriction is driven by *falling short of* the species' optima. Too cool, too dry, too aseasonal.
+- **Upper-tail dominant** (red) — the relevant climatic values lie predominantly above their occurrence-derived reference centres.
+- **Lower-tail dominant** (yellow) — the relevant climatic values lie predominantly below their occurrence-derived reference centres.
 - **Balanced / near-symmetric** (blue) — restriction is roughly equal from both sides. The species is squeezed on both edges: one variable is too high, another is too low, and neither wins the tail contest.
 
-Panels (a) and (b) usually broadly agree, and where they diverge, the divergence itself is informative. Areas where the dominant map calls "upper-tail" while the net map calls "lower-tail" (or vice versa) are pixels where a single sharp upper-tail spike dominates one metric but is outweighed by many small lower-tail contributions in the other. In practice such pixels flag *dimensional imbalance* — one variable is severely restrictive from one tail, but the aggregate pressure comes from the opposite tail.
+Where the panels diverge, the strongest individual directional score and the summed directional scores tell different stories. Such pixels separate a large predictor-specific departure on one side from cumulative contributions on the other.
 
-Together, Figures 6 and 8 form a matched attribution pair. Figure 6 says *which variable*. Figure 8 says *which direction*. Answering both, at every pixel, is the specific contribution VERA makes beyond suitability-only frameworks.
+Together, Figures 6 and 8 form a matched attribution pair. Figure 6 says *which variable* carries the leading score; Figure 8 says *which direction* dominates. Neither output is converted into a suitability or causal surface.
 
 ---
 
 <a id="which-script-produced-which-figure"></a>
 ## Which Script Produced Which Figure
 
-Every figure above is a direct output of the renderer scripts consuming the finished VERA result trees. No figure required manual assembly beyond the standard VERA outputs.
+The table records the analysis or rendering route associated with each tutorial figure. Bespoke educational compositions should retain their own source script and checksum alongside the canonical renderers.
 
 | Figure | Renderer script | Output subfolder | Notes |
 |---|---|---|---|
@@ -389,7 +376,7 @@ Every figure above is a direct output of the renderer scripts consuming the fini
 | 2 | `05_render_core_outputs.R` + native-unit density script | `response_curves/` | Top-10 grid in native units |
 | 3 | `05_render_core_outputs.R` + aligned-optimum ridge script | `response_curves/` | Top-10 aligned-optimum ridges |
 | 4 | `05_render_core_outputs.R` | `core_renderer_plum/` | Occurrence partition + Mean/Max/Δ VRS + VPI |
-| 5 | `07_render_mahalanobis_tiers.R` | `figure4_tier_calibration/` | Panels a–d of the empirical tier calibration |
+| 5 | `07_render_mahalanobis_tiers.R` | `figure4_tier_calibration/` | Empirical tier calibration; the output-folder name reflects its original renderer numbering |
 | 6 | `05_render_core_outputs.R` | `core_renderer_plum/` | Primary / secondary / TooHigh / TooLow attribution |
 | 7 | `06_render_addons.R` | `addon_renderer_plum/` | VRS vs Mahalanobis agreement pipeline (Branch A) |
 | 8 | `06_render_addons.R` | `addon_renderer_plum/` | Dominant vs Net tail direction (Branch B) |
@@ -401,17 +388,17 @@ Every subfolder above sits under `C:/VERA/Results/{19 or 36}/Images/`. Running a
 <a id="reproducibility"></a>
 ## Reproducibility
 
-Every VERA run writes four files at the root of the result directory that together guarantee reproducibility:
+Every VERA run writes four files at the root of the result directory that support traceability and reproducibility:
 
 - `Skr_sessionInfo.txt` — R version, platform, and every attached package version at the moment of the run.
 - `Skr_configuration.R` — the fully-resolved `cfg` list, sufficient to rerun the analysis without re-editing the source script.
-- `Skr_code_manifest.csv` — the SHA-256 style MD5 checksum of the analysis script itself, plus a UTC timestamp.
+- `Skr_code_manifest.csv` — the MD5 checksum of the analysis script, together with its recorded path and UTC timestamp.
 - `Skr_output_inventory.csv` — every file the run produced, with size and MD5 checksum.
 
-Combined with the initial script checksums in `metadata/script_manifest.csv`, this makes any published figure traceable to a specific script version, a specific configuration, and a specific set of input files. If any figure ever needs to be regenerated, the same script + same inputs will produce byte-identical outputs.
+Combined with the script checksums in `metadata/script_manifest.csv`, these files make a published figure traceable to a specific script version, configuration and output archive. Exact regeneration also depends on the recorded software environment and geospatial libraries; byte identity should be verified rather than assumed.
 
 > **Editing rule for this repository.** Do not silently update a released script. Changes require a version increment, a checksum update, a changelog entry, and regeneration of every affected output. The scripts deliberately retain explicit local path blocks (`C:/VERA/...`) — this makes the required inputs visible to tutorial users but means paths must be edited before execution on another computer.
 
 ---
 
-*Krüper's Nuthatch tutorial for the VERA framework. Full source code, cleaned occurrence table, predictor stack, and all diagnostic outputs are provided in this repository. For questions or contributions, open an issue.*
+*Krüper's Nuthatch tutorial for the VERA framework. Consult the repository data documentation for the availability, provenance and licences of tutorial inputs and outputs. For questions or contributions, open an issue.*
