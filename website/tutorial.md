@@ -387,6 +387,25 @@ Together, Figures 6 and 8 form a matched attribution pair. Figure 6 says *which 
 
 ---
 
+<a id="minimum-reporting-set"></a>
+## A Practical Minimum Reporting Set
+
+Researchers using the classical 19 bioclimatic predictors do not need to place every VERA output in the main article. A clear species-level account can begin with three compact map families: occurrence locations with Mean VRS, Maximum VRS and VPI; categorical stressor attribution; and a final synthesis combining Mahalanobis–VRS agreement with dominant and net tail direction.
+
+![Recommended minimum reporting sequence for a species-level VERA analysis.](figures/vera-minimum-reporting-guide.png){fig-alt="Three-stage VERA reporting guide covering occurrence locations and departure magnitude, categorical predictor attribution, and directional plus cross-geometry diagnostics." fig-align="center" width="100%"}
+
+The sequence follows three questions:
+
+1. **Where and how much?** — occurrence locations, Mean VRS, Maximum VRS and VPI.
+2. **Which predictor?** — Primary, Secondary, unique or shared maxima, TooHigh and TooLow attribution.
+3. **Which direction, and do the geometries agree?** — Mahalanobis–VRS Agreement Classes, Dominant Tail Direction and Net Tail Direction.
+
+Detailed calibration curves, predictor-density galleries, complete percentile-rank components and additional diagnostic tables can be supplied in the Supplementary Information or when required by the research question and target journal.
+
+> **Interpretive boundary.** This is a reporting guide, not a new analytical protocol. VERA maps climatic departure and diagnostic attribution; it does not estimate habitat suitability, occurrence probability, physiological tolerance or ecological causation.
+
+---
+
 <a id="reproducibility"></a>
 ## Reproducibility
 
