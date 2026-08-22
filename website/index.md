@@ -18,6 +18,10 @@ The primary diagnostic layer is formed by directionally scaled **Variable Restri
 
 ![VERA — Variable Ecological Restriction Analysis.](figures/vera-brand-banner.png){fig-alt="VERA project banner showing the full name Variable Ecological Restriction Analysis." fig-align="center" width="70%"}
 
+::: {.text-center}
+[Open the illustrated *Sitta krueperi* tutorial](tutorial.md){.btn .btn-primary .btn-lg}
+:::
+
 ## Tutorial case study
 
 This site demonstrates the workflow using *Sitta krueperi* (Krüper's nuthatch) under independent **19-predictor** and **36-predictor** profiles.
