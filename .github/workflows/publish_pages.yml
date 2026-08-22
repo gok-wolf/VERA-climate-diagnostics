@@ -6,7 +6,7 @@ on:
     branches: [main]
     paths:
       - "website/**"
-      - ".github/workflows/publish-pages.yml"
+      - ".github/workflows/publish_pages.yml"
 
 permissions:
   contents: read
