@@ -10,8 +10,11 @@ All notable repository changes will be documented here.
   and extended it to both tutorial profiles.
 - Added optional response-curve, Top-10 density and aligned-optimum ridge
   renderers for rapid Sitta tutorial visualisation.
+- Renumbered the Species Interpreter as Script 07 and the optional Mahalanobis
+  tier-calibration renderer as Script 08.
 - Standardised the new graphical outputs and optional Excel table to Arial.
 - Updated script checksums, package requirements and the script catalogue.
+- Added provisional Citation File Format metadata for the development release.
 
 ## 0.1.0-dev — 2026-08-20
 
