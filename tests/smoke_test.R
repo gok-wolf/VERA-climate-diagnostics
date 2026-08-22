@@ -10,7 +10,10 @@ expected_scripts <- c(
   "scripts/04_vera_19_36.R",
   "scripts/05_render_core_outputs.R",
   "scripts/06_render_addons.R",
-  "scripts/07_render_mahalanobis_tiers.R"
+  "scripts/07_render_mahalanobis_tiers.R",
+  "scripts/08_vera_species_interpreter.R",
+  "scripts/09_render_response_curve_panels.R",
+  "scripts/10_render_top10_response_summaries.R"
 )
 
 missing_scripts <- expected_scripts[!file.exists(expected_scripts)]
