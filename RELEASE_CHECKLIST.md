@@ -10,7 +10,8 @@
 
 ## Code
 
-- [x] Preserve the uploaded scripts without executable modification.
+- [x] Preserve the initial uploaded-script checksums and document subsequent
+      naming-only executable changes in the changelog and script manifest.
 - [x] Record initial SHA-256 checksums.
 - [ ] Run all scripts on a clean Windows environment.
 - [ ] Parse all R scripts in continuous integration.

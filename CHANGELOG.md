@@ -2,6 +2,18 @@
 
 All notable repository changes will be documented here.
 
+## 0.2.1-dev — 2026-08-23
+
+- Replaced historical `v10`/`pilot` reporting labels with neutral
+  reporting-audit terminology throughout the canonical 19- and 36-predictor
+  scripts, regional batch pipelines, configurations and Supporting Information.
+- Renamed the reporting switches to `write_reporting_audit` and
+  `reporting_contribution_coverage` without changing any VRS, Mahalanobis,
+  attribution, tier or add-on calculation.
+- Renamed reporting-only helper functions, intermediate objects and exported
+  table-section labels to match the neutral terminology.
+- Updated canonical script SHA-256 checksums after the naming-only refactor.
+
 ## 0.2.0-dev — 2026-08-22
 
 - Added the evidence-bound VERA Species Interpreter with 19-only, 36-only and

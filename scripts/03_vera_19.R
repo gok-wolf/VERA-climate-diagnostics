@@ -119,9 +119,9 @@ cfg <- list(
 
   write_optional_diagnostic_rasters = TRUE,
   write_index_rasters               = TRUE,
-  # Reporting-only confidence-framework pilot metrics.
-  write_v10_pilot_diagnostics       = TRUE,
-  v10_contribution_coverage         = 0.80,
+  # Reporting-only attribution and cap-audit metrics.
+  write_reporting_audit       = TRUE,
+  reporting_contribution_coverage         = 0.80,
   allow_missing_predictors          = FALSE,
   script_file                       = env_or_default("VERA_SCRIPT_FILE", "")
 )
@@ -870,7 +870,7 @@ calc_asym_surfaces <- function(r_stack, stats_tbl, scenario_label) {
 
     # Reporting-only metrics are streamed and immediately reduced to scalars;
     # no additional predictor raster is retained or written.
-    if (isTRUE(cfg$write_v10_pilot_diagnostics)) {
+    if (isTRUE(cfg$write_reporting_audit)) {
       diagnostic_pair <- c(
         z_sq,
         z_sq >= (MAX_VRS_SCORE - equality_tol)
@@ -1007,7 +1007,7 @@ calc_asym_surfaces <- function(r_stack, stats_tbl, scenario_label) {
         ),
         contribution_coverage_member =
           lag(.data$cumulative_vrs_contribution_pct, default = 0) <
-          (100 * cfg$v10_contribution_coverage)
+          (100 * cfg$reporting_contribution_coverage)
       ) %>%
       arrange(match(.data$variable, stats_tbl$variable))
   }
@@ -1455,8 +1455,8 @@ build_model_reference_csv <- function(shared_tbl, lookup_tbl, stats_tbl,
       rename(subject = variable) %>%
       annotate_table(
         "predictor_attribution_diagnostic",
-        "Reporting-only v10 pilot metrics for predictor contribution, cap saturation, attribution share, truncation and asymmetry evidence; these rows do not alter VRS calculations.",
-        "subject=predictor name; metric=pilot diagnostic; value=stored raw value."
+        "Reporting-only attribution and cap-audit metrics for predictor contribution, cap saturation, attribution share, truncation and asymmetry evidence; these rows do not alter VRS calculations.",
+        "subject=predictor name; metric=reporting audit diagnostic; value=stored raw value."
       )
   } else NULL
 
@@ -1583,7 +1583,7 @@ build_current_diagnostics_csv <- function(diag_summary_tbl, tier_dist_tbl,
                                           secondary_share_tbl,
                                           too_high_share_tbl, too_low_share_tbl,
                                           vpi_summary_tbl,
-                                          v10_pilot_summary_tbl = NULL) {
+                                          reporting_audit_summary_tbl = NULL) {
   out_rows <- list()
 
   out_rows[[1]] <- to_long_metrics(
@@ -1672,15 +1672,15 @@ build_current_diagnostics_csv <- function(diag_summary_tbl, tier_dist_tbl,
     "VPI = 1 / (1 + mean_vrs); higher values indicate lower climatic restriction and greater climatic proximity."
   )
 
-  if (!is.null(v10_pilot_summary_tbl) && nrow(v10_pilot_summary_tbl)) {
+  if (!is.null(reporting_audit_summary_tbl) && nrow(reporting_audit_summary_tbl)) {
     out_rows[[9]] <- to_long_metrics(
-      v10_pilot_summary_tbl,
+      reporting_audit_summary_tbl,
       id_cols = "scenario",
-      metric_cols = setdiff(names(v10_pilot_summary_tbl), "scenario")
+      metric_cols = setdiff(names(reporting_audit_summary_tbl), "scenario")
     ) %>% annotate_table(
-      "v10_pilot_diagnostic_summary",
-      "Reporting-only v10 pilot summaries for weighted tail evidence and measured cap saturation; no confidence class threshold is applied in the canonical pipeline.",
-      "scenario=current; metric=raw pilot diagnostic; value=stored value."
+      "reporting_audit_summary",
+      "Reporting-only audit summaries for weighted tail evidence and measured cap saturation; no confidence class threshold is applied in the canonical pipeline.",
+      "scenario=current; metric=raw reporting audit diagnostic; value=stored value."
     )
   }
 
@@ -1800,7 +1800,7 @@ join_index_share <- function(predictor_tbl, share_tbl, lookup_tbl,
   left_join(predictor_tbl, share_lookup, by = "variable")
 }
 
-build_v10_predictor_attribution <- function(base_tbl, stats_tbl, lookup_tbl,
+build_predictor_attribution <- function(base_tbl, stats_tbl, lookup_tbl,
                                             primary_share_tbl,
                                             secondary_share_tbl) {
   if (is.null(base_tbl) || !nrow(base_tbl)) return(tibble())
@@ -1842,7 +1842,7 @@ build_v10_predictor_attribution <- function(base_tbl, stats_tbl, lookup_tbl,
     )
 }
 
-build_v10_pilot_summary <- function(predictor_tbl, cap_summary) {
+build_reporting_audit_summary <- function(predictor_tbl, cap_summary) {
   if (is.null(predictor_tbl) || !nrow(predictor_tbl)) return(tibble())
   trunc <- ifelse(is.na(predictor_tbl$truncation_flag_any), NA,
                   predictor_tbl$truncation_flag_any %in% TRUE)
@@ -2457,14 +2457,14 @@ secondary_share_tbl <- summarize_index_share(current_res$secondary_index, lookup
 too_high_share_tbl  <- summarize_index_share(current_res$too_high_index,  lookup_tbl, "too_high")
 too_low_share_tbl   <- summarize_index_share(current_res$too_low_index,   lookup_tbl, "too_low")
 
-predictor_attribution_tbl <- build_v10_predictor_attribution(
+predictor_attribution_tbl <- build_predictor_attribution(
   base_tbl = current_res$predictor_diagnostics,
   stats_tbl = stats_tbl,
   lookup_tbl = lookup_tbl,
   primary_share_tbl = primary_share_tbl,
   secondary_share_tbl = secondary_share_tbl
 )
-v10_pilot_summary_tbl <- build_v10_pilot_summary(
+reporting_audit_summary_tbl <- build_reporting_audit_summary(
   predictor_tbl = predictor_attribution_tbl,
   cap_summary = addon_obj$cap_summary
 )
@@ -2484,7 +2484,7 @@ current_diagnostics_csv <- build_current_diagnostics_csv(
   too_high_share_tbl  = too_high_share_tbl,
   too_low_share_tbl   = too_low_share_tbl,
   vpi_summary_tbl     = global_obj$global_vpi,
-  v10_pilot_summary_tbl = v10_pilot_summary_tbl
+  reporting_audit_summary_tbl = reporting_audit_summary_tbl
 )
 
 validation_tbl <- build_validation_summary(
@@ -2509,7 +2509,7 @@ run_metadata <- tibble(
              "z2_cap", "equality_tolerance", "random_seed",
              "bootstrap_iter", "bootstrap_frac", "bootstrap_replace",
              "memfrac", "todisk", "raster_compression",
-             "v10_pilot_diagnostics", "v10_contribution_coverage"
+             "reporting_audit_enabled", "reporting_contribution_coverage"
              ),
   value  = c(cfg$species_code,
              cfg$species_label,
@@ -2545,8 +2545,8 @@ run_metadata <- tibble(
              cfg$memfrac,
              isTRUE(cfg$todisk),
              paste(cfg$raster_compression, collapse = " | "),
-             isTRUE(cfg$write_v10_pilot_diagnostics),
-             cfg$v10_contribution_coverage)
+             isTRUE(cfg$write_reporting_audit),
+             cfg$reporting_contribution_coverage)
 
 ) %>%
   mutate(value      = as.character(.data$value),

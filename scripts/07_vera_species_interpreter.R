@@ -350,7 +350,7 @@ build_predictor_evidence <- function(obj) {
   if (nrow(attribution)) names(attribution)[1] <- "variable"
 
   evidence <- if (nrow(attribution)) {
-    full_join(anchors, attribution, by = "variable", suffix = c("", "_pilot"))
+    full_join(anchors, attribution, by = "variable", suffix = c("", "_audit"))
   } else anchors
 
   variables <- evidence$variable
@@ -379,7 +379,7 @@ build_predictor_evidence <- function(obj) {
     "asym_ratio_ci_low", "asym_ratio_ci_high", "bg_lower_tail_prop",
     "bg_upper_tail_prop", "mean_vrs_contribution", "cap_saturation_fraction",
     "mean_vrs_contribution_pct", "cumulative_vrs_contribution_pct",
-    "primary_share_pct_pilot", "secondary_share_pct",
+    "primary_share_pct_audit", "secondary_share_pct",
     "attribution_share_raw", "attribution_weight_pct"
   )
   logical_cols <- c(
@@ -477,7 +477,7 @@ build_species_brief <- function(obj, evidence) {
   unique_pct <- section_metric(cur, "diagnostic_overview", "primary_unique_pixel_pct")
   codom_pct <- section_metric(cur, "diagnostic_overview", "primary_codominant_pixel_pct")
   mean_vpi <- section_metric(cur, "vpi_summary", "mean_vpi")
-  cap_pct <- section_metric(cur, "v10_pilot_diagnostic_summary", "any_predictor_at_cap_pct")
+  cap_pct <- section_metric(cur, "reporting_audit_summary", "any_predictor_at_cap_pct")
 
   top_primary <- top_row(evidence, "primary_share_pct")
   top_unique <- top_row(evidence, "unique_primary_share_pct")
@@ -549,7 +549,7 @@ build_species_brief <- function(obj, evidence) {
     lines <- c(lines, add(
       sprintf("At least one predictor reached the configured VRS cap in %s of valid pixels; capped values are censored at the configured ceiling.",
               fmt_pct(cap_pct)),
-      basename(obj$paths$current_diagnostics), "v10_pilot_diagnostic_summary",
+      basename(obj$paths$current_diagnostics), "reporting_audit_summary",
       "current", "any_predictor_at_cap_pct", cap_pct, "BRIEF_CAP_001"
     ))
   }
